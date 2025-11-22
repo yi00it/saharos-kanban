@@ -475,6 +475,12 @@
       const jk = metricsData.jkanban;
       const sh = metricsData.saharos;
 
+      const initFaster = parseFloat(sh.init) < parseFloat(jk.init);
+      const renderFaster = parseFloat(sh.render) < parseFloat(jk.render);
+      const totalFaster = parseFloat(sh.total) < parseFloat(jk.total);
+      const domFewer = sh.domNodes < jk.domNodes;
+      const htmlSmaller = sh.htmlSize < jk.htmlSize;
+
       const report = `PERFORMANCE BENCHMARK REPORT
 ========================================
 Library Comparison: saharos-kanban v1.1.0 vs jKanban v1.3.1
@@ -485,19 +491,19 @@ METRICS TABLE:
 ┌─────────────────┬──────────────┬──────────────┬────────────┐
 │ Metric          │ jKanban      │ saharos      │ Winner     │
 ├─────────────────┼──────────────┼──────────────┼────────────┤
-│ Init (ms)       │ ${jk.init.padEnd(12)} │ ${sh.init.padEnd(12)} │ ${sh.init < jk.init ? 'saharos ✓' : 'jKanban ✓'} │
-│ Render (ms)     │ ${jk.render.padEnd(12)} │ ${sh.render.padEnd(12)} │ ${sh.render < jk.render ? 'saharos ✓' : 'jKanban ✓'} │
-│ Total (ms)      │ ${jk.total.padEnd(12)} │ ${sh.total.padEnd(12)} │ ${sh.total < jk.total ? 'saharos ✓' : 'jKanban ✓'} │
-│ DOM nodes       │ ${String(jk.domNodes).padEnd(12)} │ ${String(sh.domNodes).padEnd(12)} │ ${sh.domNodes < jk.domNodes ? 'saharos ✓' : 'jKanban ✓'} │
-│ HTML size       │ ${String(jk.htmlSize).padEnd(12)} │ ${String(sh.htmlSize).padEnd(12)} │ ${sh.htmlSize < jk.htmlSize ? 'saharos ✓' : 'jKanban ✓'} │
+│ Init (ms)       │ ${jk.init.padEnd(12)} │ ${sh.init.padEnd(12)} │ ${initFaster ? 'saharos ✓' : 'jKanban ✓'.padEnd(10)} │
+│ Render (ms)     │ ${jk.render.padEnd(12)} │ ${sh.render.padEnd(12)} │ ${renderFaster ? 'saharos ✓' : 'jKanban ✓'.padEnd(10)} │
+│ Total (ms)      │ ${jk.total.padEnd(12)} │ ${sh.total.padEnd(12)} │ ${totalFaster ? 'saharos ✓' : 'jKanban ✓'.padEnd(10)} │
+│ DOM nodes       │ ${String(jk.domNodes).padEnd(12)} │ ${String(sh.domNodes).padEnd(12)} │ ${domFewer ? 'saharos ✓' : 'jKanban ✓'.padEnd(10)} │
+│ HTML size       │ ${String(jk.htmlSize).padEnd(12)} │ ${String(sh.htmlSize).padEnd(12)} │ ${htmlSmaller ? 'saharos ✓' : 'jKanban ✓'.padEnd(10)} │
 └─────────────────┴──────────────┴──────────────┴────────────┘
 
-PERFORMANCE IMPROVEMENTS:
-- Init: ${((1 - sh.init / jk.init) * 100).toFixed(1)}% faster
-- Render: ${((1 - sh.render / jk.render) * 100).toFixed(1)}% faster
-- Total: ${((1 - sh.total / jk.total) * 100).toFixed(1)}% faster
-- DOM nodes: ${((1 - sh.domNodes / jk.domNodes) * 100).toFixed(1)}% fewer
-- HTML size: ${((1 - sh.htmlSize / jk.htmlSize) * 100).toFixed(1)}% smaller
+PERFORMANCE COMPARISON:
+- Init: ${initFaster ? ((1 - sh.init / jk.init) * 100).toFixed(1) + '% faster ✓' : ((sh.init / jk.init - 1) * 100).toFixed(1) + '% slower ✗'}
+- Render: ${renderFaster ? ((1 - sh.render / jk.render) * 100).toFixed(1) + '% faster ✓' : ((sh.render / jk.render - 1) * 100).toFixed(1) + '% slower ✗'}
+- Total: ${totalFaster ? ((1 - sh.total / jk.total) * 100).toFixed(1) + '% faster ✓' : ((sh.total / jk.total - 1) * 100).toFixed(1) + '% slower ✗'}
+- DOM nodes: ${domFewer ? ((1 - sh.domNodes / jk.domNodes) * 100).toFixed(1) + '% fewer ✓' : ((sh.domNodes / jk.domNodes - 1) * 100).toFixed(1) + '% more ✗'}
+- HTML size: ${htmlSmaller ? ((1 - sh.htmlSize / jk.htmlSize) * 100).toFixed(1) + '% smaller ✓' : ((sh.htmlSize / jk.htmlSize - 1) * 100).toFixed(1) + '% larger ✗'}
 
 SAHAROS-KANBAN ADVANTAGES:
 ✓ Modern TypeScript architecture
