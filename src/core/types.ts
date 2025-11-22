@@ -6,6 +6,28 @@
 export type ID = string | number;
 
 /**
+ * Parse a string ID into either a number (if numeric) or keep as string
+ * This prevents code duplication across the codebase
+ */
+export function parseId(id: string): ID {
+  return /^\d+$/.test(id) ? Number(id) : id;
+}
+
+/**
+ * Escape an ID for use in CSS selectors
+ * Prevents injection attacks when using user-controlled IDs in querySelector
+ */
+export function escapeSelector(id: ID): string {
+  const idStr = String(id);
+  // Use CSS.escape if available (modern browsers), otherwise fallback
+  if (typeof CSS !== 'undefined' && CSS.escape) {
+    return CSS.escape(idStr);
+  }
+  // Fallback: escape special characters manually
+  return idStr.replace(/([ #;?%&,.+*~'"!^$[\]()=>|/@])/g, '\\$1');
+}
+
+/**
  * Lane represents a horizontal swimlane in the Kanban board
  */
 export interface Lane {
@@ -94,9 +116,37 @@ export interface RenderHelpers {
 
 /**
  * Custom render hooks
+ *
+ * **SECURITY WARNING:** When implementing custom renderers, you MUST:
+ * 1. Use `helpers.escapeHtml()` for all user-provided content to prevent XSS attacks
+ * 2. Include the `.sk-card` class on card elements (required for drag & drop)
+ * 3. Set `data-card-id` attribute on card elements (required for identification)
+ *
+ * @example
+ * ```ts
+ * renderCard: (card, helpers) => {
+ *   const el = helpers.createElement('div', 'sk-card my-custom-class');
+ *   el.dataset.cardId = String(card.id);
+ *   // IMPORTANT: Escape user content!
+ *   el.innerHTML = `<h3>${helpers.escapeHtml(card.title)}</h3>`;
+ *   return el;
+ * }
+ * ```
  */
 export type RenderCardHook = (card: Card, helpers: RenderHelpers) => HTMLElement;
+
+/**
+ * Custom column header renderer
+ *
+ * **SECURITY WARNING:** Use `helpers.escapeHtml()` for all user-provided content
+ */
 export type RenderColumnHeaderHook = (col: Column, helpers: RenderHelpers) => HTMLElement;
+
+/**
+ * Custom lane header renderer
+ *
+ * **SECURITY WARNING:** Use `helpers.escapeHtml()` for all user-provided content
+ */
 export type RenderLaneHeaderHook = (lane: Lane, helpers: RenderHelpers) => HTMLElement;
 
 /**

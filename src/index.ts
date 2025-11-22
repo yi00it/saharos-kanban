@@ -38,6 +38,9 @@ export type {
   AddItemOptions,
 } from './core/types';
 
+// Export utility functions
+export { parseId, escapeSelector } from './core/types';
+
 // Export utilities
 export { EventBus } from './core/events';
 export { StateManager } from './core/state';

@@ -4,6 +4,7 @@
  */
 
 import type { Card, Column, KanbanState, A11yOptions, ID } from '../core/types';
+import { parseId } from '../core/types';
 import { EventBus } from '../core/events';
 
 interface FocusPosition {
@@ -17,10 +18,14 @@ export class AccessibilityManager {
   private events: EventBus;
   private options: A11yOptions;
   private getState: () => KanbanState;
-  
+
   private currentFocus: FocusPosition | null = null;
   private pickingCard: Card | null = null; // Card being moved via keyboard
-  
+
+  // Bound event handlers to allow proper cleanup
+  private boundHandleKeyDown: (e: KeyboardEvent) => void;
+  private boundHandleFocus: (e: FocusEvent) => void;
+
   constructor(
     container: HTMLElement,
     events: EventBus,
@@ -37,6 +42,10 @@ export class AccessibilityManager {
       cardLabel: (card) => card.title,
       ...options,
     };
+
+    // Bind event handlers once
+    this.boundHandleKeyDown = this.handleKeyDown.bind(this);
+    this.boundHandleFocus = this.handleFocus.bind(this);
   }
 
   /**
@@ -123,8 +132,8 @@ export class AccessibilityManager {
    * Setup keyboard navigation
    */
   private setupKeyboardNavigation(): void {
-    this.container.addEventListener('keydown', this.handleKeyDown.bind(this));
-    this.container.addEventListener('focus', this.handleFocus.bind(this), true);
+    this.container.addEventListener('keydown', this.boundHandleKeyDown);
+    this.container.addEventListener('focus', this.boundHandleFocus, true);
 
     // Add keyboard hints (hidden visually but available to screen readers)
     this.addKeyboardHints();
@@ -212,12 +221,12 @@ export class AccessibilityManager {
       const cardId = target.dataset.cardId;
       const columnId = target.dataset.columnId;
       const laneId = target.dataset.laneId;
-      
+
       if (cardId && columnId) {
         this.currentFocus = {
-          cardId: /^\d+$/.test(cardId) ? Number(cardId) : cardId,
-          columnId: /^\d+$/.test(columnId) ? Number(columnId) : columnId,
-          laneId: laneId ? (/^\d+$/.test(laneId) ? Number(laneId) : laneId) : null,
+          cardId: parseId(cardId),
+          columnId: parseId(columnId),
+          laneId: laneId ? parseId(laneId) : null,
         };
 
         const state = this.getState();
@@ -229,11 +238,11 @@ export class AccessibilityManager {
     } else if (target.closest('.sk-column-header')) {
       const header = target.closest('.sk-column-header') as HTMLElement;
       const columnId = header.dataset.columnId;
-      
+
       if (columnId) {
         this.currentFocus = {
           cardId: null,
-          columnId: /^\d+$/.test(columnId) ? Number(columnId) : columnId,
+          columnId: parseId(columnId),
           laneId: null,
         };
       }
@@ -481,9 +490,9 @@ export class AccessibilityManager {
    * Destroy accessibility features
    */
   public destroy(): void {
-    this.container.removeEventListener('keydown', this.handleKeyDown.bind(this));
-    this.container.removeEventListener('focus', this.handleFocus.bind(this), true);
-    
+    this.container.removeEventListener('keydown', this.boundHandleKeyDown);
+    this.container.removeEventListener('focus', this.boundHandleFocus, true);
+
     const hint = document.getElementById('sk-keyboard-hint');
     if (hint) {
       hint.remove();

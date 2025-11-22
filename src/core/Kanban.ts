@@ -130,7 +130,7 @@ export class SaharosKanban {
    */
   loadState(state: KanbanState, opts?: { silent?: boolean }): void {
     this.stateManager.setState(state);
-    this.scheduleRender(true);
+    this.scheduleRender();
 
     if (!opts?.silent) {
       this.eventBus.emit('state:change', { state: this.getState() });
@@ -141,7 +141,7 @@ export class SaharosKanban {
    * Refresh the board (re-render)
    */
   refresh(): void {
-    this.scheduleRender(true);
+    this.scheduleRender();
   }
 
   /**
@@ -205,7 +205,7 @@ export class SaharosKanban {
    */
   setOptions(patch: Partial<SaharosKanbanOptions>): void {
     this.options = { ...this.options, ...patch };
-    this.scheduleRender(true);
+    this.scheduleRender();
   }
 
   // ==================== Card CRUD Methods ====================
@@ -214,6 +214,17 @@ export class SaharosKanban {
    * Add a new card
    */
   addCard(card: Omit<Card, 'order'>, opts?: import('./types').AddItemOptions): Card {
+    // Validate required fields
+    if (!card.title || (typeof card.title === 'string' && card.title.trim().length === 0)) {
+      throw new Error('[Saharos] Card must have a non-empty title');
+    }
+    if (card.id === undefined || card.id === null || (typeof card.id === 'string' && card.id.length === 0)) {
+      throw new Error('[Saharos] Card must have a valid ID');
+    }
+    if (!card.columnId || (typeof card.columnId === 'string' && card.columnId.length === 0)) {
+      throw new Error('[Saharos] Card must have a valid columnId');
+    }
+
     const newCard = this.stateManager.addCard(card as Card, opts?.index);
 
     // Use incremental rendering for single card addition
@@ -287,7 +298,8 @@ export class SaharosKanban {
 
     const success = this.stateManager.moveCard(cardId, to.columnId, to.laneId, to.index);
     if (success) {
-      const movedCard = this.stateManager.getCard(cardId)!;
+      const movedCard = this.stateManager.getCard(cardId);
+      if (!movedCard) return false;
 
       // Use incremental rendering for card move
       moveCardInDOM(this.container, movedCard, to.columnId, this.options.renderCard);
@@ -302,11 +314,13 @@ export class SaharosKanban {
 
       // Only emit drag event if caused by API call (not pointer/keyboard)
       if (!opts?.cause || opts.cause === 'api') {
-        this.eventBus.emit('card:drag:end', {
-          card: movedCard,
-          from: fromColumn!,
-          to: toColumn,
-        });
+        if (fromColumn) {
+          this.eventBus.emit('card:drag:end', {
+            card: movedCard,
+            from: fromColumn,
+            to: toColumn,
+          });
+        }
       }
 
       this.eventBus.emit('state:change', { state: this.getState() });
@@ -320,8 +334,11 @@ export class SaharosKanban {
   scrollToCard(cardId: ID, opts?: ScrollIntoViewOptions): void {
     const cardElement = this.container.querySelector(`[data-card-id="${cardId}"]`);
     if (cardElement) {
+      const card = this.stateManager.getCard(cardId);
       cardElement.scrollIntoView(opts ?? { behavior: 'smooth', block: 'center' });
-      this.eventBus.emit('a11y:focus:card', { card: this.stateManager.getCard(cardId)! });
+      if (card) {
+        this.eventBus.emit('a11y:focus:card', { card });
+      }
     }
   }
 
@@ -331,8 +348,16 @@ export class SaharosKanban {
    * Add a new column
    */
   addColumn(column: Column, opts?: import('./types').AddItemOptions): Column {
+    // Validate required fields
+    if (!column.title || (typeof column.title === 'string' && column.title.trim().length === 0)) {
+      throw new Error('[Saharos] Column must have a non-empty title');
+    }
+    if (column.id === undefined || column.id === null || (typeof column.id === 'string' && column.id.length === 0)) {
+      throw new Error('[Saharos] Column must have a valid ID');
+    }
+
     const newColumn = this.stateManager.addColumn(column, opts?.index);
-    this.scheduleRender(true);
+    this.scheduleRender();
     this.eventBus.emit('column:add', { column: newColumn });
     this.eventBus.emit('state:change', { state: this.getState() });
     return newColumn;
@@ -344,7 +369,7 @@ export class SaharosKanban {
   updateColumn(columnId: ID, patch: Partial<Column>): Column | null {
     const updatedColumn = this.stateManager.updateColumn(columnId, patch);
     if (updatedColumn) {
-      this.scheduleRender(true);
+      this.scheduleRender();
       this.eventBus.emit('column:update', { column: updatedColumn });
       this.eventBus.emit('state:change', { state: this.getState() });
     }
@@ -357,7 +382,7 @@ export class SaharosKanban {
   removeColumn(columnId: ID): boolean {
     const success = this.stateManager.removeColumn(columnId);
     if (success) {
-      this.scheduleRender(true);
+      this.scheduleRender();
       this.eventBus.emit('column:remove', { columnId });
       this.eventBus.emit('state:change', { state: this.getState() });
     }
@@ -374,7 +399,7 @@ export class SaharosKanban {
     // Update column order
     const updatedColumn = this.stateManager.updateColumn(columnId, { order: toIndex });
     if (updatedColumn) {
-      this.scheduleRender(true);
+      this.scheduleRender();
       this.eventBus.emit('column:move', { column: updatedColumn, toIndex });
       this.eventBus.emit('state:change', { state: this.getState() });
       return true;
@@ -388,8 +413,16 @@ export class SaharosKanban {
    * Add a new lane
    */
   addLane(lane: Lane, opts?: import('./types').AddItemOptions): Lane {
+    // Validate required fields
+    if (!lane.title || (typeof lane.title === 'string' && lane.title.trim().length === 0)) {
+      throw new Error('[Saharos] Lane must have a non-empty title');
+    }
+    if (lane.id === undefined || lane.id === null || (typeof lane.id === 'string' && lane.id.length === 0)) {
+      throw new Error('[Saharos] Lane must have a valid ID');
+    }
+
     const newLane = this.stateManager.addLane(lane, opts?.index);
-    this.scheduleRender(true);
+    this.scheduleRender();
     this.eventBus.emit('lane:add', { lane: newLane });
     this.eventBus.emit('state:change', { state: this.getState() });
     return newLane;
@@ -401,7 +434,7 @@ export class SaharosKanban {
   updateLane(laneId: ID, patch: Partial<Lane>): Lane | null {
     const updatedLane = this.stateManager.updateLane(laneId, patch);
     if (updatedLane) {
-      this.scheduleRender(true);
+      this.scheduleRender();
       this.eventBus.emit('lane:update', { lane: updatedLane });
       this.eventBus.emit('state:change', { state: this.getState() });
     }
@@ -414,7 +447,7 @@ export class SaharosKanban {
   removeLane(laneId: ID): boolean {
     const success = this.stateManager.removeLane(laneId);
     if (success) {
-      this.scheduleRender(true);
+      this.scheduleRender();
       this.eventBus.emit('lane:remove', { laneId });
       this.eventBus.emit('state:change', { state: this.getState() });
     }
@@ -431,7 +464,7 @@ export class SaharosKanban {
     // Update lane order
     const updatedLane = this.stateManager.updateLane(laneId, { order: toIndex });
     if (updatedLane) {
-      this.scheduleRender(true);
+      this.scheduleRender();
       this.eventBus.emit('lane:move', { lane: updatedLane, toIndex });
       this.eventBus.emit('state:change', { state: this.getState() });
       return true;
@@ -477,8 +510,9 @@ export class SaharosKanban {
    */
   /**
    * Schedule a render (debounced with requestAnimationFrame)
+   * Multiple calls are batched into a single render for performance
    */
-  private scheduleRender(_force = false): void {
+  private scheduleRender(): void {
     if (!this.renderScheduled) {
       this.renderScheduled = true;
       requestAnimationFrame(() => {
@@ -574,12 +608,12 @@ export class SaharosKanban {
       const { card, from, to } = data as { card: Card; from: Column; to: Column };
       if (from.id === to.id) {
         // Same column - just re-render to update positions
-        this.scheduleRender(true);
+        this.scheduleRender();
       } else {
         // Different column - move card
         const success = this.stateManager.moveCard(card.id, to.id, card.laneId);
         if (success) {
-          this.scheduleRender(true);
+          this.scheduleRender();
           this.eventBus.emit('state:change', { state: this.getState() });
         }
       }
@@ -623,30 +657,34 @@ export class SaharosKanban {
     const state = this.getState();
 
     // Enhance all lanes
-    if (state.lanes) {
+    if (state.lanes && this.a11yManager) {
       state.lanes.forEach((lane) => {
         const laneEl = this.container.querySelector(`.sk-lane[data-lane-id="${lane.id}"]`) as HTMLElement;
-        if (laneEl) {
-          this.a11yManager!.enhanceLane(laneEl, lane.id, lane.title);
+        if (laneEl && this.a11yManager) {
+          this.a11yManager.enhanceLane(laneEl, lane.id, lane.title);
         }
       });
     }
 
     // Enhance all columns
-    state.columns.forEach((column) => {
-      const columnEl = this.container.querySelector(`.sk-column[data-column-id="${column.id}"]`) as HTMLElement;
-      if (columnEl) {
-        this.a11yManager!.enhanceColumn(columnEl, column);
-      }
-    });
+    if (this.a11yManager) {
+      state.columns.forEach((column) => {
+        const columnEl = this.container.querySelector(`.sk-column[data-column-id="${column.id}"]`) as HTMLElement;
+        if (columnEl && this.a11yManager) {
+          this.a11yManager.enhanceColumn(columnEl, column);
+        }
+      });
+    }
 
     // Enhance all cards
-    state.cards.forEach((card) => {
-      const cardEl = this.container.querySelector(`.sk-card[data-card-id="${card.id}"]`) as HTMLElement;
-      if (cardEl) {
-        this.a11yManager!.enhanceCard(cardEl, card);
-      }
-    });
+    if (this.a11yManager) {
+      state.cards.forEach((card) => {
+        const cardEl = this.container.querySelector(`.sk-card[data-card-id="${card.id}"]`) as HTMLElement;
+        if (cardEl && this.a11yManager) {
+          this.a11yManager.enhanceCard(cardEl, card);
+        }
+      });
+    }
   }
 
   /**
@@ -658,7 +696,7 @@ export class SaharosKanban {
       const { card, to } = data as { card: Card; from: Column; to: Column };
       const success = this.stateManager.moveCard(card.id, to.id, card.laneId);
       if (success) {
-        this.scheduleRender(true);
+        this.scheduleRender();
         this.eventBus.emit('state:change', { state: this.getState() });
       }
     });

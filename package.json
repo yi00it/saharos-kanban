@@ -1,6 +1,6 @@
 {
   "name": "saharos-kanban",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "A high-quality, world-class, vanilla JavaScript Kanban board plugin - framework-agnostic and dependency-free",
   "main": "./dist/saharos-kanban.umd.js",
   "module": "./dist/saharos-kanban.esm.js",

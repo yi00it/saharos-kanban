@@ -4,6 +4,7 @@
  */
 
 import type { SaharosKanbanPlugin, PluginContext, Card, Column } from './types';
+import { escapeSelector } from './types';
 
 /**
  * WIP Limit Plugin
@@ -46,7 +47,7 @@ export function wipLimitPlugin(options: {
           onLimitExceeded(to, wipLimit, cardsInColumn.length);
           
           if (showWarning) {
-            const columnEl = document.querySelector(`.sk-column[data-column-id="${to.id}"]`);
+            const columnEl = document.querySelector(`.sk-column[data-column-id="${escapeSelector(to.id)}"]`);
             if (columnEl) {
               columnEl.classList.add(warningClass);
               setTimeout(() => columnEl.classList.remove(warningClass), 2000);
@@ -78,7 +79,7 @@ export function wipLimitPlugin(options: {
         const wipLimit = column.meta?.wipLimit as number | undefined;
         if (wipLimit !== undefined) {
           const cardsInColumn = state.cards.filter(c => c.columnId === column.id);
-          const columnEl = document.querySelector(`.sk-column[data-column-id="${column.id}"]`);
+          const columnEl = document.querySelector(`.sk-column[data-column-id="${escapeSelector(column.id)}"]`);
           
           if (columnEl) {
             // Add data attribute for CSS styling
@@ -188,7 +189,7 @@ export function cardAgingPlugin(options: {
         if (!movedAt) return;
         
         const ageInDays = (now - movedAt) / (1000 * 60 * 60 * 24);
-        const cardEl = document.querySelector(`.sk-card[data-card-id="${card.id}"]`);
+        const cardEl = document.querySelector(`.sk-card[data-card-id="${escapeSelector(card.id)}"]`);
         
         if (cardEl) {
           cardEl.classList.remove(classes.warning, classes.danger);
@@ -242,8 +243,10 @@ export function columnCollapsePlugin(options: {
       try {
         const saved = localStorage.getItem(storageKey);
         if (saved) {
-          const ids = JSON.parse(saved);
-          ids.forEach((id: string | number) => collapsedColumns.add(id));
+          const ids = JSON.parse(saved) as unknown;
+          if (Array.isArray(ids)) {
+            ids.forEach((id: string | number) => collapsedColumns.add(id));
+          }
         }
       } catch (e) {
         console.warn('Failed to load collapsed columns state:', e);
@@ -265,7 +268,7 @@ export function columnCollapsePlugin(options: {
       const state = ctx.getState();
       
       state.columns.forEach(column => {
-        const columnEl = document.querySelector(`.sk-column[data-column-id="${column.id}"]`);
+        const columnEl = document.querySelector(`.sk-column[data-column-id="${escapeSelector(column.id)}"]`);
         if (!columnEl) return;
         
         const header = columnEl.querySelector('.sk-column-header');
@@ -324,7 +327,7 @@ export function columnCollapsePlugin(options: {
       const state = ctx.getState();
       
       state.columns.forEach(column => {
-        const columnEl = document.querySelector(`.sk-column[data-column-id="${column.id}"]`) as HTMLElement;
+        const columnEl = document.querySelector(`.sk-column[data-column-id="${escapeSelector(column.id)}"]`) as HTMLElement;
         if (!columnEl) return;
         
         const isCollapsed = collapsedColumns.has(column.id);

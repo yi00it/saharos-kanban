@@ -4,6 +4,7 @@
  */
 
 import type { Card, Column, ID, DragOptions } from './types';
+import { parseId } from './types';
 import { EventBus } from './events';
 
 interface DragState {
@@ -139,8 +140,7 @@ export class DragAndDropManager {
     const cardIdRaw = cardElement.dataset.cardId;
     if (!cardIdRaw) return;
 
-    // Convert to number if it's a numeric string, otherwise keep as string
-    const cardId: ID = /^\d+$/.test(cardIdRaw) ? Number(cardIdRaw) : cardIdRaw;
+    const cardId: ID = parseId(cardIdRaw);
 
     const card = this.getCardData(cardId);
     const column = this.getColumnData(card?.columnId);
@@ -351,8 +351,7 @@ export class DragAndDropManager {
     const columnIdRaw = columnElement.dataset.columnId;
     if (!columnIdRaw) return null;
 
-    // Convert to number if it's a numeric string, otherwise keep as string
-    const columnId: ID = /^\d+$/.test(columnIdRaw) ? Number(columnIdRaw) : columnIdRaw;
+    const columnId: ID = parseId(columnIdRaw);
 
     const column = this.getColumnData(columnId);
     if (!column) return null;

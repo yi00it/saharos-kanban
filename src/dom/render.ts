@@ -16,11 +16,20 @@ function escapeHtml(str: string): string {
 
 /**
  * Global render helpers instance - reused across all renders to reduce overhead
+ *
+ * **NOTE:** This is a singleton shared across all Kanban instances on the same page.
+ * Since the helpers are stateless utility functions, this is safe and improves performance
+ * by reducing object allocations. If you have multiple Kanban boards with different
+ * rendering requirements, each board can still use its own custom render hooks.
  */
 let globalHelpers: RenderHelpers | null = null;
 
 /**
  * Get or create render helpers (singleton pattern)
+ *
+ * Returns a singleton instance of render helpers that provides utility functions
+ * for creating and manipulating DOM elements. The singleton pattern reduces
+ * memory overhead when multiple Kanban instances exist on the same page.
  */
 export function createRenderHelpers(): RenderHelpers {
   if (globalHelpers) return globalHelpers;
@@ -133,9 +142,23 @@ export function renderColumn(
   cardsContainer.className = 'sk-cards';
 
   cards.forEach((card) => {
-    const cardEl = customCardRenderer
-      ? customCardRenderer(card, renderHelpers)
-      : defaultCardRenderer(card);
+    let cardEl: HTMLElement;
+    if (customCardRenderer) {
+      try {
+        cardEl = customCardRenderer(card, renderHelpers);
+        // Validate that required attributes are present
+        if (!cardEl.classList.contains('sk-card') || !cardEl.dataset.cardId) {
+          console.warn(`[Saharos] Custom card renderer for card "${card.id}" missing required class or data-card-id. Falling back to default renderer.`);
+          cardEl = defaultCardRenderer(card);
+        }
+      } catch (error) {
+        console.error(`[Saharos] Custom card renderer failed for card "${card.id}":`, error);
+        console.warn('[Saharos] Falling back to default card renderer');
+        cardEl = defaultCardRenderer(card);
+      }
+    } else {
+      cardEl = defaultCardRenderer(card);
+    }
     cardsContainer.appendChild(cardEl);
   });
 
@@ -248,9 +271,23 @@ export function addCardToDOM(
   if (!cardsContainer) return;
 
   const helpers = createRenderHelpers();
-  const cardEl = customCardRenderer
-    ? customCardRenderer(card, helpers)
-    : defaultCardRenderer(card);
+  let cardEl: HTMLElement;
+
+  if (customCardRenderer) {
+    try {
+      cardEl = customCardRenderer(card, helpers);
+      if (!cardEl.classList.contains('sk-card') || !cardEl.dataset.cardId) {
+        console.warn(`[Saharos] Custom card renderer for card "${card.id}" missing required class or data-card-id. Falling back to default renderer.`);
+        cardEl = defaultCardRenderer(card);
+      }
+    } catch (error) {
+      console.error(`[Saharos] Custom card renderer failed for card "${card.id}":`, error);
+      console.warn('[Saharos] Falling back to default card renderer');
+      cardEl = defaultCardRenderer(card);
+    }
+  } else {
+    cardEl = defaultCardRenderer(card);
+  }
 
   cardsContainer.appendChild(cardEl);
 }
@@ -270,9 +307,23 @@ export function updateCardInDOM(
   if (!existingCard) return;
 
   const helpers = createRenderHelpers();
-  const newCardEl = customCardRenderer
-    ? customCardRenderer(card, helpers)
-    : defaultCardRenderer(card);
+  let newCardEl: HTMLElement;
+
+  if (customCardRenderer) {
+    try {
+      newCardEl = customCardRenderer(card, helpers);
+      if (!newCardEl.classList.contains('sk-card') || !newCardEl.dataset.cardId) {
+        console.warn(`[Saharos] Custom card renderer for card "${card.id}" missing required class or data-card-id. Falling back to default renderer.`);
+        newCardEl = defaultCardRenderer(card);
+      }
+    } catch (error) {
+      console.error(`[Saharos] Custom card renderer failed for card "${card.id}":`, error);
+      console.warn('[Saharos] Falling back to default card renderer');
+      newCardEl = defaultCardRenderer(card);
+    }
+  } else {
+    newCardEl = defaultCardRenderer(card);
+  }
 
   // Preserve data attributes and classes from old element
   newCardEl.dataset.cardId = String(card.id);
