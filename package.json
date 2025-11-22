@@ -43,12 +43,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/saharos/saharos-kanban.git"
+    "url": "https://github.com/yi00it/saharos-kanban.git"
   },
   "bugs": {
-    "url": "https://github.com/saharos/saharos-kanban/issues"
+    "url": "https://github.com/yi00it/saharos-kanban/issues"
   },
-  "homepage": "https://github.com/saharos/saharos-kanban#readme",
+  "homepage": "https://github.com/yi00it/saharos-kanban#readme",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",

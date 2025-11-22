@@ -1,5 +1,11 @@
 # Saharos Kanban
 
+[![npm version](https://img.shields.io/npm/v/saharos-kanban.svg?style=flat-square)](https://www.npmjs.com/package/saharos-kanban)
+[![npm downloads](https://img.shields.io/npm/dm/saharos-kanban.svg?style=flat-square)](https://www.npmjs.com/package/saharos-kanban)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
+[![Zero Dependencies](https://img.shields.io/badge/dependencies-0-green.svg?style=flat-square)](package.json)
+
 A high-quality, world-class **Vanilla JavaScript** Kanban board plugin that is framework-agnostic, fully dependency-free, and production-ready.
 
 ## 🎉 Production Ready - v1.0.0
