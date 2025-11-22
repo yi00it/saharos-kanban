@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Saharos-Kanban 1.0.2 vs jKanban – Performance Benchmark</title>
+  <title>Saharos-Kanban 1.1.0 vs jKanban – Performance Benchmark</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
@@ -185,11 +185,11 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jkanban@1.3.1/dist/jkanban.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/jkanban@1.3.1/dist/jkanban.min.js"></script>
 
-  <!-- Saharos-Kanban 1.0.2 CSS from npm (jsDelivr) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/saharos-kanban@1.0.2/dist/saharos-kanban.css" />
+  <!-- Saharos-Kanban 1.1.0 CSS from npm (jsDelivr) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/saharos-kanban@1.1.0/dist/saharos-kanban.css" />
 </head>
 <body>
-  <h1>Saharos-Kanban 1.0.2 vs jKanban – Performance Benchmark</h1>
+  <h1>Saharos-Kanban 1.1.0 vs jKanban – Performance Benchmark</h1>
   <p>
     Both boards use the same generated dataset (same columns, same number of cards).
     We measure initialization and render time, plus some DOM stats, for each library.
@@ -263,7 +263,7 @@
           Saharos-Kanban
           <span class="badge">Zero-dependency, modern</span>
         </div>
-        <div class="version">v1.0.2</div>
+        <div class="version">v1.1.0</div>
         <div class="controls">
           <button data-lib="saharos" data-count="100">100</button>
           <button data-lib="saharos" data-count="500">500</button>
@@ -304,9 +304,9 @@
     Tip: Open DevTools → Performance or Memory while running tests to inspect flame charts, layout thrashing, FPS, and memory usage.
   </p>
 
-  <!-- All logic in one ESM script, Saharos-Kanban pinned to 1.0.2 -->
+  <!-- All logic in one ESM script, Saharos-Kanban pinned to 1.1.0 -->
   <script type="module">
-    import { SaharosKanban } from 'https://esm.run/saharos-kanban@1.0.2';
+    import { SaharosKanban } from 'https://esm.run/saharos-kanban@1.1.0';
 
     let jKanbanInstance = null;
     let saharosInstance = null;
