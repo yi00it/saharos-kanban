@@ -47,14 +47,20 @@ export function createRenderHelpers(): RenderHelpers {
 }
 
 /**
- * Default card renderer - optimized for minimal DOM nodes
+ * Default card renderer - ultra-minimal DOM structure
  */
 export function defaultCardRenderer(card: Card): HTMLElement {
   const cardEl = document.createElement('div');
   cardEl.className = 'sk-card';
   cardEl.dataset.cardId = String(card.id);
 
-  // Title - use direct text node with class for styling
+  // For simple cards (title only), render directly to save DOM nodes
+  if (!card.description && (!card.labels || card.labels.length === 0)) {
+    cardEl.textContent = card.title;
+    return cardEl;
+  }
+
+  // Title wrapper only when we have additional content
   const title = document.createElement('div');
   title.className = 'sk-card-title';
   title.textContent = card.title;
