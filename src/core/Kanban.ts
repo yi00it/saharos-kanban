@@ -100,8 +100,8 @@ export class SaharosKanban {
     this.dndManager = null;
     this.a11yManager = null;
 
-    // Initial render
-    this.scheduleRender(true);
+    // Initial render (synchronous for immediate display)
+    this.render();
 
     // Initialize drag and drop
     this.initializeDragAndDrop();
