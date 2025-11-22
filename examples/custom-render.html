@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saharos Kanban - Custom Rendering Example</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f0f2f5;
+    }
+
+    .header {
+      background: #fff;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 0.875rem;
+    }
+
+    .container {
+      height: calc(100vh - 120px);
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    #board {
+      height: 100%;
+    }
+
+    .controls {
+      padding: 1rem 2rem;
+      background: #fff;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      background: #0288d1;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #0277bd;
+    }
+
+    .info {
+      margin-left: auto;
+      color: #666;
+      font-size: 0.875rem;
+    }
+
+    /* Custom Card Styles */
+    .custom-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .card-title-section {
+      flex: 1;
+    }
+
+    .card-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .card-meta {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      font-size: 0.75rem;
+      color: #666;
+    }
+
+    .card-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .card-meta-icon {
+      font-size: 0.875rem;
+    }
+
+    .card-priority {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.625rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-priority.high {
+      background: #fee;
+      color: #c00;
+    }
+
+    .card-priority.medium {
+      background: #fef3cd;
+      color: #856404;
+    }
+
+    .card-priority.low {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    /* Custom Column Header Styles */
+    .custom-column-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .column-title-section {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .column-icon {
+      font-size: 1rem;
+    }
+
+    .column-count {
+      background: #e0e0e0;
+      color: #333;
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    .column-wip-limit {
+      font-size: 0.75rem;
+      color: #666;
+    }
+
+    .column-wip-limit.warning {
+      color: #ff9800;
+      font-weight: 600;
+    }
+
+    .column-wip-limit.exceeded {
+      color: #f44336;
+      font-weight: 700;
+    }
+
+    /* Custom Lane Header Styles */
+    .custom-lane-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 8px;
+      color: white;
+      margin-bottom: 16px;
+    }
+
+    .lane-title-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .lane-icon {
+      font-size: 1.5rem;
+    }
+
+    .lane-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+
+    .lane-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Theme customization via CSS variables */
+    #board {
+      --sk-card-border-color: #d0d0d0;
+      --sk-card-hover-bg: #fafafa;
+      --sk-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+      --sk-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Saharos Kanban - Custom Rendering Example</h1>
+    <p>Milestone 4 - Custom render hooks with avatars, priorities, due dates, WIP limits, and more</p>
+  </div>
+
+  <div class="controls">
+    <button onclick="refreshBoard()">Refresh Board</button>
+    <button onclick="logState()">Log State</button>
+    <button onclick="addHighPriorityCard()">Add High Priority Card</button>
+    <div class="info">Custom renderers with rich metadata ✨</div>
+  </div>
+
+  <div class="container">
+    <div id="board"></div>
+  </div>
+
+  <script type="module">
+    import { SaharosKanban } from '../src/index.ts';
+
+    // Sample data with extended metadata
+    const initialData = {
+      lanes: [
+        { 
+          id: 'team-1', 
+          title: 'Frontend Team',
+          metadata: { teamSize: 5, velocity: 32 }
+        },
+        { 
+          id: 'team-2', 
+          title: 'Backend Team',
+          metadata: { teamSize: 4, velocity: 28 }
+        }
+      ],
+      columns: [
+        { 
+          id: 'backlog', 
+          title: 'Backlog',
+          metadata: { icon: '📋', wipLimit: null }
+        },
+        { 
+          id: 'todo', 
+          title: 'To Do',
+          metadata: { icon: '📝', wipLimit: 5 }
+        },
+        { 
+          id: 'in-progress', 
+          title: 'In Progress',
+          metadata: { icon: '⚡', wipLimit: 3 }
+        },
+        { 
+          id: 'review', 
+          title: 'Review',
+          metadata: { icon: '👀', wipLimit: 2 }
+        },
+        { 
+          id: 'done', 
+          title: 'Done',
+          metadata: { icon: '✅', wipLimit: null }
+        }
+      ],
+      cards: [
+        {
+          id: 1,
+          title: 'Redesign navigation menu',
+          description: 'Update the main navigation with new branding',
+          columnId: 'in-progress',
+          laneId: 'team-1',
+          metadata: {
+            assignee: 'Alice',
+            priority: 'high',
+            dueDate: '2025-11-25',
+            comments: 3,
+            attachments: 2
+          }
+        },
+        {
+          id: 2,
+          title: 'Implement dark mode',
+          description: 'Add dark mode toggle with theme persistence',
+          columnId: 'todo',
+          laneId: 'team-1',
+          metadata: {
+            assignee: 'Bob',
+            priority: 'medium',
+            dueDate: '2025-11-30',
+            comments: 1,
+            attachments: 0
+          }
+        },
+        {
+          id: 3,
+          title: 'Optimize bundle size',
+          description: 'Reduce bundle size by code splitting',
+          columnId: 'review',
+          laneId: 'team-1',
+          metadata: {
+            assignee: 'Charlie',
+            priority: 'low',
+            dueDate: '2025-12-05',
+            comments: 5,
+            attachments: 1
+          }
+        },
+        {
+          id: 4,
+          title: 'API rate limiting',
+          description: 'Implement rate limiting for public endpoints',
+          columnId: 'in-progress',
+          laneId: 'team-2',
+          metadata: {
+            assignee: 'David',
+            priority: 'high',
+            dueDate: '2025-11-23',
+            comments: 2,
+            attachments: 3
+          }
+        },
+        {
+          id: 5,
+          title: 'Database migration',
+          description: 'Migrate from PostgreSQL 14 to 15',
+          columnId: 'todo',
+          laneId: 'team-2',
+          metadata: {
+            assignee: 'Eve',
+            priority: 'medium',
+            dueDate: '2025-12-01',
+            comments: 0,
+            attachments: 0
+          }
+        },
+        {
+          id: 6,
+          title: 'Implement caching layer',
+          description: 'Add Redis caching for frequently accessed data',
+          columnId: 'in-progress',
+          laneId: 'team-2',
+          metadata: {
+            assignee: 'Frank',
+            priority: 'high',
+            dueDate: '2025-11-26',
+            comments: 4,
+            attachments: 2
+          }
+        },
+        {
+          id: 7,
+          title: 'Setup CI/CD pipeline',
+          description: 'Automated testing and deployment',
+          columnId: 'done',
+          laneId: 'team-2',
+          metadata: {
+            assignee: 'Grace',
+            priority: 'high',
+            dueDate: '2025-11-20',
+            comments: 7,
+            attachments: 5
+          }
+        },
+        {
+          id: 8,
+          title: 'Mobile responsive fixes',
+          description: 'Fix layout issues on mobile devices',
+          columnId: 'backlog',
+          laneId: 'team-1',
+          metadata: {
+            assignee: 'Henry',
+            priority: 'low',
+            dueDate: '2025-12-10',
+            comments: 0,
+            attachments: 0
+          }
+        }
+      ]
+    };
+
+    // Helper function to get initials from name
+    function getInitials(name) {
+      return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    }
+
+    // Helper function to format due date
+    function formatDueDate(dateStr) {
+      const date = new Date(dateStr);
+      const today = new Date();
+      const diffTime = date - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays < 0) return 'Overdue';
+      if (diffDays === 0) return 'Today';
+      if (diffDays === 1) return 'Tomorrow';
+      return `${diffDays}d`;
+    }
+
+    // Custom card renderer
+    function renderCard(card, helpers) {
+      const el = helpers.createElement('div');
+      const meta = card.metadata || {};
+      
+      el.innerHTML = `
+        <div class="custom-card">
+          <div class="card-header">
+            <div class="card-title-section">
+              <div class="sk-card-title">${helpers.escapeHtml(card.title)}</div>
+              ${meta.priority ? `
+                <span class="card-priority ${meta.priority}">
+                  ${meta.priority === 'high' ? '🔥' : meta.priority === 'medium' ? '⚡' : '🔵'} 
+                  ${meta.priority}
+                </span>
+              ` : ''}
+            </div>
+            ${meta.assignee ? `
+              <div class="card-avatar" title="${meta.assignee}">
+                ${getInitials(meta.assignee)}
+              </div>
+            ` : ''}
+          </div>
+          
+          ${card.description ? `
+            <div class="sk-card-description">${helpers.escapeHtml(card.description)}</div>
+          ` : ''}
+          
+          <div class="card-meta">
+            ${meta.dueDate ? `
+              <div class="card-meta-item" title="Due date">
+                <span class="card-meta-icon">📅</span>
+                <span>${formatDueDate(meta.dueDate)}</span>
+              </div>
+            ` : ''}
+            ${meta.comments ? `
+              <div class="card-meta-item" title="${meta.comments} comments">
+                <span class="card-meta-icon">💬</span>
+                <span>${meta.comments}</span>
+              </div>
+            ` : ''}
+            ${meta.attachments ? `
+              <div class="card-meta-item" title="${meta.attachments} attachments">
+                <span class="card-meta-icon">📎</span>
+                <span>${meta.attachments}</span>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+      
+      return el;
+    }
+
+    // Custom column header renderer
+    function renderColumnHeader(column, helpers) {
+      const el = helpers.createElement('div');
+      const state = board.getState();
+      const meta = column.metadata || {};
+      
+      // Count cards in this column
+      const cardCount = state.cards.filter(c => c.columnId === column.id).length;
+      const wipLimit = meta.wipLimit;
+      
+      let wipClass = '';
+      let wipText = '';
+      if (wipLimit !== null && wipLimit !== undefined) {
+        if (cardCount > wipLimit) {
+          wipClass = 'exceeded';
+          wipText = `⚠️ ${cardCount}/${wipLimit}`;
+        } else if (cardCount === wipLimit) {
+          wipClass = 'warning';
+          wipText = `${cardCount}/${wipLimit}`;
+        } else {
+          wipText = `${cardCount}/${wipLimit}`;
+        }
+      }
+      
+      el.innerHTML = `
+        <div class="custom-column-header">
+          <div class="column-title-section">
+            ${meta.icon ? `<span class="column-icon">${meta.icon}</span>` : ''}
+            <span class="sk-column-title">${helpers.escapeHtml(column.title)}</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="column-count">${cardCount}</span>
+            ${wipText ? `<span class="column-wip-limit ${wipClass}">${wipText}</span>` : ''}
+          </div>
+        </div>
+      `;
+      
+      return el;
+    }
+
+    // Custom lane header renderer
+    function renderLaneHeader(lane, helpers) {
+      const el = helpers.createElement('div');
+      const meta = lane.metadata || {};
+      const state = board.getState();
+      
+      // Count cards in this lane
+      const laneCardCount = state.cards.filter(c => c.laneId === lane.id).length;
+      
+      el.innerHTML = `
+        <div class="custom-lane-header">
+          <div class="lane-title-section">
+            <span class="lane-icon">👥</span>
+            <div>
+              <div class="sk-lane-title">${helpers.escapeHtml(lane.title)}</div>
+            </div>
+          </div>
+          <div class="lane-meta">
+            ${meta.teamSize ? `
+              <div class="lane-meta-item">
+                <span>👤</span>
+                <span>${meta.teamSize} members</span>
+              </div>
+            ` : ''}
+            <div class="lane-meta-item">
+              <span>📋</span>
+              <span>${laneCardCount} cards</span>
+            </div>
+            ${meta.velocity ? `
+              <div class="lane-meta-item">
+                <span>⚡</span>
+                <span>${meta.velocity} pts/sprint</span>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+      
+      return el;
+    }
+
+    // Initialize the board with custom renderers
+    const board = new SaharosKanban('#board', {
+      lanes: initialData.lanes,
+      columns: initialData.columns,
+      cards: initialData.cards,
+      renderCard,
+      renderColumnHeader,
+      renderLaneHeader,
+      debug: true,
+      on: {
+        'board:ready': () => {
+          console.log('✅ Board is ready with custom rendering!');
+        },
+        'state:change': () => {
+          // Re-render on state change to update counts
+          board.refresh();
+        },
+        'card:drag:end': ({ card, from, to }) => {
+          console.log(`✨ Moved "${card.title}" from "${from.title}" to "${to.title}"`);
+        }
+      }
+    });
+
+    // Make board available globally for controls
+    window.board = board;
+    window.refreshBoard = () => board.refresh();
+    window.logState = () => console.log(board.getState());
+    window.addHighPriorityCard = () => {
+      board.addCard({
+        id: Date.now(),
+        title: `Urgent Task ${Math.floor(Math.random() * 1000)}`,
+        description: 'This needs immediate attention',
+        columnId: 'todo',
+        laneId: 'team-1',
+        metadata: {
+          assignee: 'You',
+          priority: 'high',
+          dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
+          comments: 0,
+          attachments: 0
+        }
+      });
+    };
+  </script>
+</body>
+</html>

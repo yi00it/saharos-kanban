@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drag Debug Test</title>
+  <style>
+    body {
+      font-family: system-ui;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 { margin-bottom: 20px; }
+    #board { height: 600px; }
+    .log {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #000;
+      color: #0f0;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Drag & Drop Debug Test</h1>
+  <p>Click and drag any card. Check console and log panel below.</p>
+  <div id="board"></div>
+  <div class="log" id="log"></div>
+
+  <script type="module">
+    import { SaharosKanban } from '../src/index.ts';
+
+    const log = (msg) => {
+      console.log(msg);
+      const logEl = document.getElementById('log');
+      logEl.innerHTML += msg + '<br>';
+      logEl.scrollTop = logEl.scrollHeight;
+    };
+
+    log('Initializing board...');
+
+    const board = new SaharosKanban('#board', {
+      columns: [
+        { id: 'col1', title: 'Column 1' },
+        { id: 'col2', title: 'Column 2' }
+      ],
+      cards: [
+        { id: 'card1', title: 'Drag Me!', columnId: 'col1' },
+        { id: 'card2', title: 'Drag Me Too!', columnId: 'col2' }
+      ],
+      debug: true,
+      on: {
+        'board:ready': () => log('✅ Board ready'),
+        'card:drag:start': ({ card }) => log(`🎯 Drag START: ${card.title}`),
+        'card:drag:over': ({ column }) => log(`🔄 Drag OVER: ${column.title}`),
+        'card:drag:end': ({ card, from, to }) => log(`✨ Drag END: ${card.title} | ${from.title} → ${to.title}`),
+      }
+    });
+
+    window.board = board;
+    log('Board instance created');
+    log('Try dragging a card now!');
+  </script>
+</body>
+</html>

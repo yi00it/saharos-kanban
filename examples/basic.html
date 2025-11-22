@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saharos Kanban - Basic Example</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f0f2f5;
+    }
+
+    .header {
+      background: #fff;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 0.875rem;
+    }
+
+    .container {
+      height: calc(100vh - 120px);
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    #board {
+      height: 100%;
+    }
+
+    .controls {
+      padding: 1rem 2rem;
+      background: #fff;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      background: #0288d1;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #0277bd;
+    }
+
+    .info {
+      margin-left: auto;
+      color: #666;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Saharos Kanban - Basic Example</h1>
+    <p>A zero-dependency, framework-agnostic Kanban board</p>
+  </div>
+
+  <div class="controls">
+    <button onclick="refreshBoard()">Refresh Board</button>
+    <button onclick="logState()">Log State</button>
+    <button onclick="addRandomCard()">Add Random Card</button>
+    <div class="info">Milestone 2 - Drag & Drop (v0.2.0) ✨ Try dragging cards!</div>
+  </div>
+
+  <div class="container">
+    <div id="board"></div>
+  </div>
+
+  <script type="module">
+    import { SaharosKanban } from '../src/index.ts';
+
+    // Sample data
+    const initialData = {
+      columns: [
+        { id: 'todo', title: 'To Do' },
+        { id: 'in-progress', title: 'In Progress' },
+        { id: 'review', title: 'In Review' },
+        { id: 'done', title: 'Done' }
+      ],
+      cards: [
+        {
+          id: 1,
+          title: 'Setup project structure',
+          description: 'Create folder structure and configuration files',
+          columnId: 'done',
+          labels: ['setup', 'milestone-1']
+        },
+        {
+          id: 2,
+          title: 'Implement event bus',
+          description: 'Create zero-dependency event emitter',
+          columnId: 'done',
+          labels: ['core', 'milestone-1']
+        },
+        {
+          id: 3,
+          title: 'Implement state management',
+          description: 'Build state manager with CRUD operations',
+          columnId: 'done',
+          labels: ['core', 'milestone-1']
+        },
+        {
+          id: 4,
+          title: 'Create rendering system',
+          description: 'DOM rendering for lanes, columns, and cards',
+          columnId: 'done',
+          labels: ['dom', 'milestone-1']
+        },
+        {
+          id: 5,
+          title: 'Implement drag & drop',
+          description: 'Pointer-based drag and drop with hit-testing',
+          columnId: 'done',
+          labels: ['feature', 'milestone-2']
+        },
+        {
+          id: 6,
+          title: 'Add custom render hooks',
+          description: 'Support for custom card, column, and lane renderers',
+          columnId: 'todo',
+          labels: ['feature', 'milestone-4']
+        },
+        {
+          id: 7,
+          title: 'Implement accessibility',
+          description: 'Keyboard navigation and ARIA support',
+          columnId: 'todo',
+          labels: ['a11y', 'milestone-5']
+        },
+        {
+          id: 8,
+          title: 'Build plugin system',
+          description: 'Extensible plugin architecture',
+          columnId: 'in-progress',
+          labels: ['feature', 'milestone-6']
+        }
+      ]
+    };
+
+    // Initialize the board
+    const board = new SaharosKanban('#board', {
+      columns: initialData.columns,
+      cards: initialData.cards,
+      debug: true,
+      on: {
+        'board:ready': () => {
+          console.log('✅ Board is ready! Try dragging cards between columns.');
+        },
+        'state:change': ({ state }) => {
+          console.log('📊 State changed:', state);
+        },
+        'card:drag:start': ({ card }) => {
+          console.log('🎯 Drag started:', card.title);
+        },
+        'card:drag:over': ({ card, column }) => {
+          console.log('🔄 Dragging over:', column.title);
+        },
+        'card:drag:end': ({ card, from, to }) => {
+          console.log(`✨ Moved "${card.title}" from "${from.title}" to "${to.title}"`);
+        }
+      }
+    });
+
+    // Make board available globally for controls
+    window.board = board;
+    window.refreshBoard = () => board.refresh();
+    window.logState = () => console.log(board.getState());
+    window.addRandomCard = () => {
+      const state = board.getState();
+      const newCard = {
+        id: Date.now(),
+        title: `New Task ${Math.floor(Math.random() * 1000)}`,
+        description: 'Dynamically added card',
+        columnId: 'todo',
+        labels: ['new']
+      };
+      state.cards.push(newCard);
+      board.loadState(state);
+    };
+  </script>
+</body>
+</html>

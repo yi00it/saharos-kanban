@@ -1,0 +1,98 @@
+/**
+ * Saharos Kanban - Colorful Theme
+ * Vibrant, energetic color scheme with gradients
+ */
+
+.sk-theme-colorful {
+  /* Colors - Board */
+  --sk-board-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  
+  /* Colors - Column */
+  --sk-column-bg: rgba(255, 255, 255, 0.95);
+  --sk-column-header-bg: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --sk-column-border-color: transparent;
+  
+  /* Colors - Card */
+  --sk-card-bg: #ffffff;
+  --sk-card-border-color: #e0e0e0;
+  --sk-card-hover-bg: #fafafa;
+  
+  /* Colors - Lane */
+  --sk-lane-header-bg: rgba(255, 255, 255, 0.15);
+  --sk-lane-border-color: rgba(255, 255, 255, 0.3);
+  
+  /* Colors - Text */
+  --sk-text-primary: #333333;
+  --sk-text-secondary: #666666;
+  --sk-text-muted: #999999;
+  
+  /* Colors - Generic */
+  --sk-border-color: #e0e0e0;
+  --sk-accent-color: #f5576c;
+  --sk-accent-bg: #fff0f3;
+  
+  /* Colors - Drag & Drop */
+  --sk-drag-mirror-opacity: 0.95;
+  --sk-drag-placeholder-border: 2px dashed #f5576c;
+  --sk-drag-over-bg: #fff0f3;
+  --sk-dragging-opacity: 0.5;
+  
+  /* Shadows */
+  --sk-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --sk-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --sk-shadow-active: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+/* Board background gradient */
+.sk-theme-colorful .sk-board {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Column header with gradient */
+.sk-theme-colorful .sk-column-header {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border-bottom: none;
+}
+
+.sk-theme-colorful .sk-column-title {
+  color: white;
+}
+
+/* Enhanced shadows */
+.sk-theme-colorful .sk-column {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border-radius: var(--sk-radius-lg);
+  overflow: hidden;
+}
+
+.sk-theme-colorful .sk-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sk-theme-colorful .sk-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+}
+
+/* Lane header styling */
+.sk-theme-colorful .sk-lane-header {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--sk-radius-lg);
+  padding: var(--sk-spacing-lg);
+  margin-bottom: var(--sk-spacing-xl);
+}
+
+.sk-theme-colorful .sk-lane-title {
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Card labels with gradients */
+.sk-theme-colorful .sk-card-label {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}

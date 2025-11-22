@@ -1,0 +1,58 @@
+/**
+ * Saharos Kanban - Light Theme
+ * Clean, bright color scheme (refined default)
+ */
+
+.sk-theme-light {
+  /* Colors - Board */
+  --sk-board-bg: #f5f7fa;
+  
+  /* Colors - Column */
+  --sk-column-bg: #ffffff;
+  --sk-column-header-bg: #fafbfc;
+  --sk-column-border-color: #e1e4e8;
+  
+  /* Colors - Card */
+  --sk-card-bg: #ffffff;
+  --sk-card-border-color: #e1e4e8;
+  --sk-card-hover-bg: #fafbfc;
+  
+  /* Colors - Lane */
+  --sk-lane-header-bg: #ffffff;
+  --sk-lane-border-color: #e1e4e8;
+  
+  /* Colors - Text */
+  --sk-text-primary: #24292e;
+  --sk-text-secondary: #586069;
+  --sk-text-muted: #959da5;
+  
+  /* Colors - Generic */
+  --sk-border-color: #e1e4e8;
+  --sk-accent-color: #0366d6;
+  --sk-accent-bg: #f1f8ff;
+  
+  /* Colors - Drag & Drop */
+  --sk-drag-mirror-opacity: 0.9;
+  --sk-drag-placeholder-border: 2px dashed #d1d5da;
+  --sk-drag-over-bg: #f1f8ff;
+  --sk-dragging-opacity: 0.5;
+  
+  /* Shadows */
+  --sk-shadow: 0 1px 3px rgba(27, 31, 35, 0.12), 0 0 0 1px rgba(27, 31, 35, 0.04);
+  --sk-shadow-hover: 0 4px 8px rgba(27, 31, 35, 0.15), 0 0 0 1px rgba(27, 31, 35, 0.06);
+  --sk-shadow-active: 0 6px 12px rgba(27, 31, 35, 0.18), 0 0 0 1px rgba(27, 31, 35, 0.08);
+}
+
+/* Column styling */
+.sk-theme-light .sk-column {
+  border: 1px solid var(--sk-column-border-color);
+}
+
+/* Lane header styling */
+.sk-theme-light .sk-lane-header {
+  padding: var(--sk-spacing-md) var(--sk-spacing-lg);
+  background: var(--sk-lane-header-bg);
+  border: 1px solid var(--sk-lane-border-color);
+  border-radius: var(--sk-radius-md);
+  margin-bottom: var(--sk-spacing-lg);
+}

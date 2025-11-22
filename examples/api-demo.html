@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saharos Kanban - Full API Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f2f5;
+    }
+    .header {
+      background: #fff;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1rem;
+    }
+    .header h1 { font-size: 1.5rem; color: #333; margin-bottom: 0.5rem; }
+    .header p { color: #666; font-size: 0.875rem; }
+    .controls {
+      padding: 1rem 2rem;
+      background: #fff;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      background: #0288d1;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    button:hover { background: #0277bd; }
+    button.danger { background: #d32f2f; }
+    button.danger:hover { background: #c62828; }
+    button.success { background: #388e3c; }
+    button.success:hover { background: #2e7d32; }
+    .container { height: calc(100vh - 280px); max-width: 1400px; margin: 0 auto; }
+    #board { height: 100%; }
+    .info { width: 100%; color: #666; font-size: 0.75rem; margin-top: 0.5rem; }
+    .section-label { font-weight: 600; color: #333; margin-right: 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Saharos Kanban - Full API Demo</h1>
+    <p>Milestone 3 (v0.3.0) - Complete CRUD API + LocalStorage Autosave</p>
+  </div>
+
+  <div class="controls">
+    <span class="section-label">Cards:</span>
+    <button onclick="apiAddCard()">➕ Add Card</button>
+    <button onclick="apiUpdateCard()">✏️ Update Card</button>
+    <button onclick="apiRemoveCard()">❌ Remove Card</button>
+    <button onclick="apiMoveCard()">🔄 Move Card</button>
+    <button onclick="apiScrollToCard()">🎯 Scroll to Card</button>
+    
+    <span class="section-label" style="margin-left: 1rem;">Columns:</span>
+    <button onclick="apiAddColumn()">➕ Add Column</button>
+    <button onclick="apiUpdateColumn()">✏️ Update Column</button>
+    <button onclick="apiRemoveColumn()">❌ Remove Column</button>
+    
+    <span class="section-label" style="margin-left: 1rem;">State:</span>
+    <button class="success" onclick="apiLogState()">📊 Log State</button>
+    <button class="success" onclick="apiSaveState()">💾 Save to Storage</button>
+    <button class="danger" onclick="apiClearStorage()">🗑️ Clear Storage</button>
+    <button onclick="apiRefresh()">🔄 Refresh</button>
+    
+    <div class="info">
+      💡 Try the API methods above, then refresh the page - your state will be restored from LocalStorage!
+    </div>
+  </div>
+
+  <div class="container">
+    <div id="board"></div>
+  </div>
+
+  <script type="module">
+    import { SaharosKanban } from '../src/index.ts';
+
+    // Initialize board with LocalStorage autosave
+    const board = new SaharosKanban('#board', {
+      storageKey: 'saharos-kanban-api-demo', // Enable autosave
+      columns: [
+        { id: 'backlog', title: 'Backlog' },
+        { id: 'todo', title: 'To Do' },
+        { id: 'doing', title: 'Doing' },
+        { id: 'done', title: 'Done' }
+      ],
+      cards: [
+        { id: 1, title: 'API Demo Card 1', description: 'Try the buttons above!', columnId: 'backlog', labels: ['demo'] },
+        { id: 2, title: 'API Demo Card 2', columnId: 'todo' },
+        { id: 3, title: 'Drag me!', columnId: 'doing' }
+      ],
+      debug: true,
+      on: {
+        'board:ready': () => console.log('✅ Board ready with autosave enabled'),
+        'card:add': ({ card }) => console.log('➕ Card added:', card.title),
+        'card:update': ({ card }) => console.log('✏️ Card updated:', card.title),
+        'card:remove': ({ cardId }) => console.log('❌ Card removed:', cardId),
+        'column:add': ({ column }) => console.log('➕ Column added:', column.title),
+        'column:update': ({ column }) => console.log('✏️ Column updated:', column.title),
+        'column:remove': ({ columnId }) => console.log('❌ Column removed:', columnId),
+        'state:change': () => console.log('💾 State autosaved to localStorage'),
+      }
+    });
+
+    // Make board available globally
+    window.board = board;
+
+    // ==================== Card API Methods ====================
+    
+    let cardIdCounter = 1000;
+    window.apiAddCard = () => {
+      const newCard = board.addCard({
+        id: ++cardIdCounter,
+        title: `New Card ${cardIdCounter}`,
+        description: `Created via API at ${new Date().toLocaleTimeString()}`,
+        columnId: 'todo',
+        labels: ['api-created']
+      });
+      console.log('✅ Added card:', newCard);
+      alert(`Added card: "${newCard.title}"`);
+    };
+
+    window.apiUpdateCard = () => {
+      const state = board.getState();
+      const firstCard = state.cards[0];
+      if (!firstCard) {
+        alert('No cards to update!');
+        return;
+      }
+      
+      board.updateCard(firstCard.id, {
+        title: `Updated: ${firstCard.title}`,
+        labels: ['updated']
+      });
+      alert(`Updated card ID: ${firstCard.id}`);
+    };
+
+    window.apiRemoveCard = () => {
+      const state = board.getState();
+      const lastCard = state.cards[state.cards.length - 1];
+      if (!lastCard) {
+        alert('No cards to remove!');
+        return;
+      }
+      
+      if (confirm(`Remove card "${lastCard.title}"?`)) {
+        board.removeCard(lastCard.id);
+      }
+    };
+
+    window.apiMoveCard = () => {
+      const state = board.getState();
+      const firstCard = state.cards[0];
+      if (!firstCard) {
+        alert('No cards to move!');
+        return;
+      }
+      
+      // Move to 'done' column
+      board.moveCard(firstCard.id, { columnId: 'done' });
+      alert(`Moved "${firstCard.title}" to Done`);
+    };
+
+    window.apiScrollToCard = () => {
+      const state = board.getState();
+      if (state.cards.length > 0) {
+        const middleCard = state.cards[Math.floor(state.cards.length / 2)];
+        board.scrollToCard(middleCard.id);
+        alert(`Scrolling to "${middleCard.title}"`);
+      }
+    };
+
+    // ==================== Column API Methods ====================
+    
+    let columnIdCounter = 100;
+    window.apiAddColumn = () => {
+      const newColumn = board.addColumn({
+        id: `col-${++columnIdCounter}`,
+        title: `Column ${columnIdCounter}`
+      });
+      console.log('✅ Added column:', newColumn);
+      alert(`Added column: "${newColumn.title}"`);
+    };
+
+    window.apiUpdateColumn = () => {
+      const state = board.getState();
+      const firstColumn = state.columns[0];
+      if (!firstColumn) return;
+      
+      board.updateColumn(firstColumn.id, {
+        title: `${firstColumn.title} ⭐`
+      });
+      alert(`Updated column: ${firstColumn.id}`);
+    };
+
+    window.apiRemoveColumn = () => {
+      const state = board.getState();
+      if (state.columns.length <= 2) {
+        alert('Keep at least 2 columns!');
+        return;
+      }
+      
+      const lastColumn = state.columns[state.columns.length - 1];
+      if (confirm(`Remove column "${lastColumn.title}"?`)) {
+        board.removeColumn(lastColumn.id);
+      }
+    };
+
+    // ==================== State API Methods ====================
+    
+    window.apiLogState = () => {
+      const state = board.getState();
+      console.log('📊 Current State:', state);
+      alert(`State logged to console:\n${state.columns.length} columns, ${state.cards.length} cards`);
+    };
+
+    window.apiSaveState = () => {
+      // State is auto-saved on every change, but you can also manually trigger it
+      const state = board.getState();
+      console.log('💾 Current state:', state);
+      alert('State is auto-saved to localStorage on every change!');
+    };
+
+    window.apiClearStorage = () => {
+      if (confirm('Clear saved state from localStorage? Board will reset on refresh.')) {
+        board.clearStorage();
+        alert('Storage cleared! Refresh to see the default state.');
+      }
+    };
+
+    window.apiRefresh = () => {
+      board.refresh();
+      alert('Board refreshed!');
+    };
+
+    console.log('🎯 API Demo Ready! Try the buttons above.');
+    console.log('💡 Your changes are auto-saved. Refresh the page to see persistence in action!');
+  </script>
+</body>
+</html>

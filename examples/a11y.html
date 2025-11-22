@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saharos Kanban - Accessibility Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f0f2f5;
+    }
+
+    .header {
+      background: #fff;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+    }
+
+    .keyboard-guide {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-top: 1rem;
+    }
+
+    .keyboard-guide h3 {
+      font-size: 0.875rem;
+      color: #1976d2;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    .keyboard-guide ul {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .keyboard-guide li {
+      font-size: 0.75rem;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .keyboard-guide kbd {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      padding: 2px 6px;
+      font-size: 0.7rem;
+      font-family: monospace;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .container {
+      height: calc(100vh - 280px);
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    #board {
+      height: 100%;
+    }
+
+    .controls {
+      padding: 1rem 2rem;
+      background: #fff;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      background: #0288d1;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #0277bd;
+    }
+
+    button:focus {
+      outline: 3px solid #0288d1;
+      outline-offset: 2px;
+    }
+
+    .info {
+      margin-left: auto;
+      color: #666;
+      font-size: 0.875rem;
+    }
+
+    .event-log {
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      width: 300px;
+      max-height: 200px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px 0 0 0;
+      padding: 0.5rem;
+      font-size: 0.75rem;
+      font-family: monospace;
+      overflow-y: auto;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+      z-index: 1000;
+    }
+
+    .event-log h4 {
+      margin-bottom: 0.5rem;
+      font-size: 0.75rem;
+      color: #666;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
+    }
+
+    .event-log-entry {
+      padding: 0.25rem;
+      margin-bottom: 0.25rem;
+      border-left: 3px solid #2196f3;
+      padding-left: 0.5rem;
+      background: #f5f5f5;
+    }
+
+    .event-log-entry.a11y {
+      border-left-color: #4caf50;
+    }
+
+    @media (max-width: 768px) {
+      .keyboard-guide ul {
+        grid-template-columns: 1fr;
+      }
+
+      .event-log {
+        width: 100%;
+        max-height: 150px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Saharos Kanban - Accessibility & Mobile Demo</h1>
+    <p>Milestone 5 - Full keyboard navigation, ARIA support, and touch-friendly mobile experience</p>
+    
+    <div class="keyboard-guide">
+      <h3>⌨️ Keyboard Navigation</h3>
+      <ul>
+        <li><kbd>Tab</kbd> Navigate to cards</li>
+        <li><kbd>Arrow Keys</kbd> Move between cards</li>
+        <li><kbd>Space</kbd> / <kbd>Enter</kbd> Pick/drop card</li>
+        <li><kbd>Esc</kbd> Cancel card move</li>
+        <li><kbd>Home</kbd> / <kbd>End</kbd> First/last card</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="focusFirstCard()">Focus First Card</button>
+    <button onclick="toggleA11y()">Toggle A11y</button>
+    <button onclick="clearLog()">Clear Log</button>
+    <button onclick="addCard()">Add Card</button>
+    <div class="info">Try using only your keyboard! 🎹</div>
+  </div>
+
+  <div class="container">
+    <div id="board"></div>
+  </div>
+
+  <div class="event-log" id="eventLog">
+    <h4>Event Log (accessibility events highlighted)</h4>
+  </div>
+
+  <script type="module">
+    import { SaharosKanban } from '../src/index.ts';
+
+    // Sample data
+    const initialData = {
+      columns: [
+        { id: 'backlog', title: 'Backlog' },
+        { id: 'todo', title: 'To Do' },
+        { id: 'in-progress', title: 'In Progress' },
+        { id: 'review', title: 'Review' },
+        { id: 'done', title: 'Done' }
+      ],
+      cards: [
+        {
+          id: 1,
+          title: 'Implement keyboard navigation',
+          description: 'Arrow keys to navigate, Space/Enter to pick/drop',
+          columnId: 'done',
+          labels: ['a11y', 'milestone-5']
+        },
+        {
+          id: 2,
+          title: 'Add ARIA roles and labels',
+          description: 'Screen reader support with semantic HTML',
+          columnId: 'done',
+          labels: ['a11y', 'milestone-5']
+        },
+        {
+          id: 3,
+          title: 'Implement focus management',
+          description: 'Visible focus indicators and focus trapping',
+          columnId: 'done',
+          labels: ['a11y', 'milestone-5']
+        },
+        {
+          id: 4,
+          title: 'Add touch gesture support',
+          description: 'Native touch events with proper feedback',
+          columnId: 'done',
+          labels: ['mobile', 'milestone-5']
+        },
+        {
+          id: 5,
+          title: 'Mobile-optimized UI',
+          description: 'Larger touch targets and responsive layout',
+          columnId: 'done',
+          labels: ['mobile', 'milestone-5']
+        },
+        {
+          id: 6,
+          title: 'Test with screen readers',
+          description: 'Validate with NVDA, JAWS, VoiceOver',
+          columnId: 'in-progress',
+          labels: ['a11y', 'testing']
+        },
+        {
+          id: 7,
+          title: 'Document accessibility features',
+          description: 'Write comprehensive a11y documentation',
+          columnId: 'todo',
+          labels: ['docs', 'a11y']
+        },
+        {
+          id: 8,
+          title: 'Create accessibility audit checklist',
+          description: 'WCAG 2.1 AA compliance checklist',
+          columnId: 'backlog',
+          labels: ['a11y', 'planning']
+        }
+      ]
+    };
+
+    // Event logging function
+    function logEvent(eventName, data, isA11y = false) {
+      const logContainer = document.getElementById('eventLog');
+      const entry = document.createElement('div');
+      entry.className = `event-log-entry ${isA11y ? 'a11y' : ''}`;
+      
+      const time = new Date().toLocaleTimeString();
+      entry.textContent = `[${time}] ${eventName}`;
+      
+      if (data) {
+        const details = document.createElement('div');
+        details.style.fontSize = '0.65rem';
+        details.style.color = '#888';
+        details.style.marginTop = '2px';
+        
+        if (data.card) {
+          details.textContent = `Card: "${data.card.title}"`;
+        } else if (data.column) {
+          details.textContent = `Column: "${data.column.title}"`;
+        }
+        
+        entry.appendChild(details);
+      }
+      
+      logContainer.appendChild(entry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+      
+      // Keep only last 20 entries
+      while (logContainer.children.length > 21) { // +1 for header
+        logContainer.removeChild(logContainer.children[1]);
+      }
+    }
+
+    // Initialize the board with full a11y options
+    const board = new SaharosKanban('#board', {
+      columns: initialData.columns,
+      cards: initialData.cards,
+      debug: true,
+      a11y: {
+        enabled: true,
+        boardLabel: 'Project Management Kanban Board',
+        columnLabel: (col) => `${col.title} column`,
+        cardLabel: (card) => `${card.title}${card.description ? ': ' + card.description : ''}`,
+      },
+      on: {
+        'board:ready': () => {
+          logEvent('board:ready');
+          console.log('✅ Board ready with full accessibility support!');
+        },
+        'state:change': ({ state }) => {
+          logEvent('state:change');
+        },
+        'a11y:focus:card': ({ card }) => {
+          logEvent('a11y:focus:card', { card }, true);
+          console.log('🎯 Focused card:', card.title);
+        },
+        'a11y:move:card': ({ card, from, to }) => {
+          logEvent('a11y:move:card', { card }, true);
+          console.log(`⌨️ Keyboard moved "${card.title}" from "${from.title}" to "${to.title}"`);
+        },
+        'card:drag:start': ({ card }) => {
+          logEvent('card:drag:start', { card });
+        },
+        'card:drag:end': ({ card, from, to }) => {
+          logEvent('card:drag:end', { card });
+          console.log(`🖱️ Mouse moved "${card.title}" from "${from.title}" to "${to.title}"`);
+        }
+      }
+    });
+
+    // Global functions for buttons
+    window.board = board;
+    
+    window.focusFirstCard = () => {
+      const firstCard = document.querySelector('.sk-card');
+      if (firstCard) {
+        firstCard.focus();
+        logEvent('Manually focused first card');
+      }
+    };
+
+    window.toggleA11y = () => {
+      // This would require updating options dynamically
+      // For demo, just log
+      logEvent('A11y toggle clicked (reload to change)');
+      alert('Accessibility is currently always enabled in this demo. To disable, set a11y: { enabled: false } in options.');
+    };
+
+    window.clearLog = () => {
+      const log = document.getElementById('eventLog');
+      while (log.children.length > 1) {
+        log.removeChild(log.lastChild);
+      }
+    };
+
+    window.addCard = () => {
+      board.addCard({
+        id: Date.now(),
+        title: `New Card ${Math.floor(Math.random() * 1000)}`,
+        description: 'Added via keyboard-accessible button',
+        columnId: 'backlog',
+        labels: ['new']
+      });
+      logEvent('Card added via API');
+    };
+
+    // Log initial state
+    console.log('📋 Initial board state:', board.getState());
+    console.log('');
+    console.log('🎹 Try these keyboard shortcuts:');
+    console.log('  • Tab - Focus cards');
+    console.log('  • Arrow keys - Navigate between cards');
+    console.log('  • Space or Enter - Pick up / Drop card');
+    console.log('  • Escape - Cancel card move');
+    console.log('  • Home / End - Jump to first/last card in column');
+    console.log('');
+    console.log('📱 On mobile: Touch and drag cards naturally!');
+  </script>
+</body>
+</html>

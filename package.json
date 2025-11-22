@@ -1,0 +1,65 @@
+{
+  "name": "saharos-kanban",
+  "version": "1.0.0",
+  "description": "A high-quality, world-class, vanilla JavaScript Kanban board plugin - framework-agnostic and dependency-free",
+  "main": "./dist/saharos-kanban.umd.js",
+  "module": "./dist/saharos-kanban.esm.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/saharos-kanban.esm.js",
+      "require": "./dist/saharos-kanban.umd.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./dist/style.css": "./dist/saharos-kanban.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.{ts,css}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,css}\""
+  },
+  "keywords": [
+    "kanban",
+    "kanban-board",
+    "drag-and-drop",
+    "vanilla-js",
+    "javascript",
+    "typescript",
+    "zero-dependencies",
+    "framework-agnostic",
+    "ui-component",
+    "project-management",
+    "task-management",
+    "trello"
+  ],
+  "author": "Saharos Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/saharos/saharos-kanban.git"
+  },
+  "bugs": {
+    "url": "https://github.com/saharos/saharos-kanban/issues"
+  },
+  "homepage": "https://github.com/saharos/saharos-kanban#readme",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vite-plugin-dts": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

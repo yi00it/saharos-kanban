@@ -1,0 +1,76 @@
+/**
+ * Saharos Kanban - Dark Theme
+ * Modern dark color scheme for reduced eye strain
+ */
+
+.sk-theme-dark {
+  /* Colors - Board */
+  --sk-board-bg: #1e1e1e;
+  
+  /* Colors - Column */
+  --sk-column-bg: #2d2d2d;
+  --sk-column-header-bg: transparent;
+  --sk-column-border-color: #404040;
+  
+  /* Colors - Card */
+  --sk-card-bg: #3a3a3a;
+  --sk-card-border-color: #4a4a4a;
+  --sk-card-hover-bg: #424242;
+  
+  /* Colors - Lane */
+  --sk-lane-header-bg: transparent;
+  --sk-lane-border-color: #404040;
+  
+  /* Colors - Text */
+  --sk-text-primary: #e0e0e0;
+  --sk-text-secondary: #b0b0b0;
+  --sk-text-muted: #808080;
+  
+  /* Colors - Generic */
+  --sk-border-color: #404040;
+  --sk-accent-color: #64b5f6;
+  --sk-accent-bg: rgba(100, 181, 246, 0.15);
+  
+  /* Colors - Drag & Drop */
+  --sk-drag-mirror-opacity: 0.9;
+  --sk-drag-placeholder-border: 2px dashed #606060;
+  --sk-drag-over-bg: rgba(100, 181, 246, 0.1);
+  --sk-dragging-opacity: 0.5;
+  
+  /* Shadows */
+  --sk-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --sk-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --sk-shadow-active: 0 6px 16px rgba(0, 0, 0, 0.6);
+}
+
+/* Scrollbar styling for dark theme */
+.sk-theme-dark .sk-board::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.sk-theme-dark .sk-board::-webkit-scrollbar-track {
+  background: #2d2d2d;
+}
+
+.sk-theme-dark .sk-board::-webkit-scrollbar-thumb {
+  background: #4a4a4a;
+  border-radius: 6px;
+}
+
+.sk-theme-dark .sk-board::-webkit-scrollbar-thumb:hover {
+  background: #5a5a5a;
+}
+
+/* Focus styles for dark theme */
+.sk-theme-dark .sk-card:focus,
+.sk-theme-dark .sk-column-header:focus {
+  outline-color: #64b5f6;
+  box-shadow: 0 0 0 4px rgba(100, 181, 246, 0.2);
+}
+
+/* Card picking state for dark theme */
+.sk-theme-dark .sk-card--picking {
+  outline-color: #ffa726;
+  box-shadow: 0 4px 12px rgba(255, 167, 38, 0.4);
+}
