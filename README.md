@@ -371,6 +371,86 @@ const board = new SaharosKanban('#board', {
 });
 ```
 
+### Custom Rendering
+
+When providing custom render functions, you **must** include specific classes and attributes for the library to work correctly.
+
+#### Custom Card Rendering
+
+⚠️ **IMPORTANT:** Your custom `renderCard` function **must** return an element with:
+- **Class:** `.sk-card` (required for drag & drop functionality)
+- **Attribute:** `data-card-id="${card.id}"` (required for card identification)
+
+**Example:**
+```javascript
+const board = new SaharosKanban('#board', {
+  renderCard: (card, helpers) => {
+    const el = helpers.createElement('div');
+    
+    // REQUIRED: Add .sk-card class
+    el.className = 'sk-card my-custom-class';
+    
+    // REQUIRED: Add data-card-id attribute
+    el.dataset.cardId = String(card.id);
+    
+    // Your custom content
+    el.innerHTML = `
+      <div class="custom-card-header">
+        <h3>${helpers.escapeHtml(card.title)}</h3>
+      </div>
+      <div class="custom-card-body">
+        ${helpers.escapeHtml(card.description || '')}
+      </div>
+    `;
+    
+    return el;
+  }
+});
+```
+
+#### Custom Column Header Rendering
+
+When providing a custom `renderColumnHeader`, include:
+- **Attribute:** `data-column-id="${column.id}"` (automatically added by the library)
+
+**Example:**
+```javascript
+renderColumnHeader: (column, helpers) => {
+  const el = helpers.createElement('div', 'sk-column-header');
+  el.innerHTML = `
+    <h2>${helpers.escapeHtml(column.title)}</h2>
+    <span class="card-count">${cardCount}</span>
+  `;
+  return el;
+}
+```
+
+#### Custom Lane Header Rendering
+
+**Example:**
+```javascript
+renderLaneHeader: (lane, helpers) => {
+  const el = helpers.createElement('div', 'sk-lane-header');
+  el.innerHTML = `
+    <h1>${helpers.escapeHtml(lane.title)}</h1>
+  `;
+  return el;
+}
+```
+
+#### RenderHelpers API
+
+The `helpers` object passed to render functions provides:
+- `createElement(tag, className?)` - Create element with optional class
+- `escapeHtml(str)` - Escape HTML to prevent XSS
+- `addClass(el, ...classes)` - Add classes to element
+- `removeClass(el, ...classes)` - Remove classes from element
+- `defaultCardRenderer(card)` - Default card renderer
+- `defaultColumnHeaderRenderer(column)` - Default column header
+- `defaultLaneHeaderRenderer(lane)` - Default lane header
+
+**See `examples/custom-render.html` for a complete working example.**
+
 ## Development
 
 ### Setup
@@ -456,11 +536,187 @@ new SaharosKanban(container: string | HTMLElement, options?: SaharosKanbanOption
 
 ### Events
 
-- `board:ready` - Board initialized
-- `board:destroy` - Board destroyed
-- `state:change` - State updated
+Saharos Kanban emits events for all board operations. Subscribe to events using the `on` option or `board.on()` method.
 
-More events coming in Milestone 3!
+#### Complete Event List
+
+**Board Lifecycle:**
+- `board:ready` - Board initialized and ready
+- `board:destroy` - Board destroyed and cleaned up
+- `state:change` - State updated (fired after CRUD operations)
+
+**Card Events:**
+- `card:add` - Card added to board
+- `card:update` - Card updated
+- `card:remove` - Card removed from board
+- `card:click` - Card clicked
+- `card:dblclick` - Card double-clicked
+- `card:drag:start` - Drag started
+- `card:drag:over` - Dragging over a column
+- `card:drag:end` - Drag completed (card dropped)
+- `card:drag:cancel` - Drag cancelled
+
+**Column Events:**
+- `column:add` - Column added
+- `column:update` - Column updated
+- `column:remove` - Column removed
+- `column:move` - Column reordered
+
+**Lane Events:**
+- `lane:add` - Lane added
+- `lane:update` - Lane updated
+- `lane:remove` - Lane removed
+- `lane:move` - Lane reordered
+
+**Accessibility Events:**
+- `a11y:focus:card` - Card focused via keyboard
+- `a11y:move:card` - Card moved via keyboard
+
+#### Event Details: `card:drag:end`
+
+Fired when a card is dropped in a new column. This is the most commonly used event for syncing with backends.
+
+**Event Payload:**
+```typescript
+{
+  card: {
+    id: number | string,      // Card ID
+    title: string,            // Card title
+    columnId: string,         // NEW column ID (after move)
+    laneId?: string | null,   // Lane ID (if using lanes)
+    description?: string,     // Card description
+    order?: number,           // Card order in column
+    labels?: string[],        // Card labels
+    meta?: object             // Custom metadata
+  },
+  from: {
+    id: string,               // Source column ID (e.g., 'todo')
+    title: string,            // Source column title (e.g., 'To Do')
+    laneId?: string | null,   // Source lane ID
+    order?: number,           // Column order
+    meta?: object             // Source column metadata
+  },
+  to: {
+    id: string,               // Target column ID (e.g., 'in-progress')
+    title: string,            // Target column title (e.g., 'In Progress')
+    laneId?: string | null,   // Target lane ID
+    order?: number,           // Column order
+    meta?: object             // Target column metadata
+  }
+}
+```
+
+**Example Usage:**
+
+```javascript
+const board = new SaharosKanban('#board', {
+  on: {
+    'card:drag:end': ({ card, from, to }) => {
+      console.log(`Card "${card.title}" moved from "${from.title}" to "${to.title}"`);
+      
+      // Update backend with new status
+      fetch(`/api/cards/${card.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: to.id,           // ← New column ID
+          previousStatus: from.id  // ← Old column ID
+        })
+      });
+      
+      // Show user notification
+      showToast(`Card moved to ${to.title}`);
+      
+      // Analytics tracking
+      analytics.track('card_moved', {
+        cardId: card.id,
+        fromColumn: from.id,
+        toColumn: to.id
+      });
+    }
+  }
+});
+```
+
+**Common Patterns:**
+
+```javascript
+// Pattern 1: Backend sync
+'card:drag:end': async ({ card, to }) => {
+  await updateCardStatus(card.id, to.id);
+}
+
+// Pattern 2: Conditional logic based on column
+'card:drag:end': ({ card, to }) => {
+  if (to.id === 'done') {
+    // Card marked as complete
+    celebrateCompletion(card);
+  }
+}
+
+// Pattern 3: Prevent certain moves (with undo)
+'card:drag:end': ({ card, from, to }) => {
+  if (to.id === 'archived' && !card.meta?.reviewed) {
+    // Move back to original column
+    board.moveCard(card.id, from.id);
+    alert('Card must be reviewed before archiving');
+  }
+}
+
+// Pattern 4: Update related data
+'card:drag:end': ({ card, from, to }) => {
+  // Update card metadata
+  board.updateCard(card.id, {
+    meta: {
+      ...card.meta,
+      movedAt: Date.now(),
+      movedFrom: from.id,
+      movedTo: to.id
+    }
+  });
+}
+```
+
+#### Event Details: `a11y:move:card`
+
+Similar to `card:drag:end`, but fired when cards are moved via keyboard navigation (Space/Enter).
+
+```javascript
+'a11y:move:card': ({ card, from, to }) => {
+  // Same payload as card:drag:end
+  console.log('Card moved via keyboard');
+}
+```
+
+#### Subscribing to Events
+
+**Option 1: During initialization**
+```javascript
+const board = new SaharosKanban('#board', {
+  on: {
+    'card:drag:end': (event) => { /* ... */ }
+  }
+});
+```
+
+**Option 2: After initialization**
+```javascript
+board.on('card:drag:end', (event) => {
+  console.log('Card moved:', event);
+});
+
+// One-time subscription
+board.once('board:ready', () => {
+  console.log('Board ready!');
+});
+
+// Unsubscribe
+const handler = (event) => console.log(event);
+board.on('card:drag:end', handler);
+board.off('card:drag:end', handler);
+```
+
+**See `examples/` folder for complete working examples of all events.**
 
 ## Browser Support
 
@@ -468,6 +724,88 @@ More events coming in Milestone 3!
 - Firefox: Latest 2 versions
 - Safari: Latest 2 versions
 - Modern mobile browsers
+
+## Troubleshooting
+
+### Drag & Drop Not Working with Custom Cards
+
+**Problem:** Cards don't drag when using custom `renderCard` function.
+
+**Solution:** Ensure your custom card element includes:
+```javascript
+// REQUIRED for drag & drop
+element.className = 'sk-card'; // or 'sk-card your-custom-class'
+element.dataset.cardId = String(card.id);
+```
+
+### Cards Not Updating After State Changes
+
+**Problem:** Visual changes don't appear after calling CRUD methods.
+
+**Solution:** The board auto-renders after CRUD operations. If you modify state directly:
+```javascript
+const state = board.getState();
+state.cards[0].title = "New Title";
+// Must call loadState to trigger re-render
+board.loadState(state);
+```
+
+### TypeScript Errors with Custom Metadata
+
+**Problem:** TypeScript complains about custom `meta` properties.
+
+**Solution:** Extend the types:
+```typescript
+import type { Card } from 'saharos-kanban';
+
+interface MyCard extends Card {
+  meta?: {
+    priority?: 'high' | 'medium' | 'low';
+    dueDate?: string;
+  };
+}
+```
+
+### Keyboard Navigation Not Working
+
+**Problem:** Arrow keys don't navigate between cards.
+
+**Solution:** Ensure accessibility is enabled (it's on by default):
+```javascript
+const board = new SaharosKanban('#board', {
+  a11y: {
+    enabled: true  // Default: true
+  }
+});
+```
+
+### Plugin Not Running
+
+**Problem:** Plugin code doesn't execute.
+
+**Solution:** Plugins must be passed during initialization:
+```javascript
+// ✅ Correct
+const board = new SaharosKanban('#board', {
+  plugins: [myPlugin()]
+});
+
+// ❌ Wrong - too late
+const board = new SaharosKanban('#board', {});
+board.use(myPlugin()); // This works but after board:ready
+```
+
+### Performance Issues with Large Boards
+
+**Problem:** Board is slow with 1000+ cards.
+
+**Solution:** Consider:
+- Enabling column collapsing plugin
+- Implementing pagination or lazy loading
+- Using virtual scrolling (future feature)
+- Reducing render complexity in custom renderers
+
+For more help, check the [examples](./examples/) or [open an issue](https://github.com/saharos/saharos-kanban/issues).
 
 ## License
 
