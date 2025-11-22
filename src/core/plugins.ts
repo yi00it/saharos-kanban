@@ -35,7 +35,7 @@ export function wipLimitPlugin(options: {
 
   return (ctx: PluginContext) => {
     // Check WIP limits before card moves
-    ctx.on('card:drag:end', ({ card, to }) => {
+    ctx.on('card:drag:end', ({ to }) => {
       const state = ctx.getState();
       const wipLimit = to.meta?.wipLimit as number | undefined;
       
@@ -57,7 +57,7 @@ export function wipLimitPlugin(options: {
     });
 
     // Also check on keyboard moves
-    ctx.on('a11y:move:card', ({ card, to }) => {
+    ctx.on('a11y:move:card', ({ to }) => {
       const state = ctx.getState();
       const wipLimit = to.meta?.wipLimit as number | undefined;
       
@@ -132,13 +132,21 @@ export function cardAgingPlugin(options: {
   return (ctx: PluginContext) => {
     // Track when cards move to new columns
     ctx.on('card:drag:end', ({ card }) => {
-      updateCardTimestamp(card);
-      ctx.setState(ctx.getState(), { silent: true });
+      const state = ctx.getState();
+      const stateCard = state.cards.find(c => c.id === card.id);
+      if (stateCard) {
+        updateCardTimestamp(stateCard);
+        ctx.setState(state, { silent: true });
+      }
     });
 
     ctx.on('a11y:move:card', ({ card }) => {
-      updateCardTimestamp(card);
-      ctx.setState(ctx.getState(), { silent: true });
+      const state = ctx.getState();
+      const stateCard = state.cards.find(c => c.id === card.id);
+      if (stateCard) {
+        updateCardTimestamp(stateCard);
+        ctx.setState(state, { silent: true });
+      }
     });
 
     // Update visual indicators
@@ -294,9 +302,9 @@ export function columnCollapsePlugin(options: {
           e.stopPropagation();
           toggleColumn(column.id);
         });
-        
-        header.style.display = 'flex';
-        header.style.alignItems = 'center';
+
+        (header as HTMLElement).style.display = 'flex';
+        (header as HTMLElement).style.alignItems = 'center';
         header.appendChild(button);
       });
     }

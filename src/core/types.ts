@@ -166,9 +166,9 @@ export interface PluginContext {
   board: unknown; // Will be SaharosKanban instance
   getState: () => KanbanState;
   setState: (state: KanbanState, opts?: { silent?: boolean }) => void;
-  on: <K extends SaharosEvent>(event: K, handler: EventHandler) => void;
-  off: <K extends SaharosEvent>(event: K, handler: EventHandler) => void;
-  emit: <K extends SaharosEvent>(event: K, data?: unknown) => void;
+  on: <K extends keyof SaharosEventHandlers>(event: K, handler: SaharosEventHandlers[K]) => void;
+  off: <K extends keyof SaharosEventHandlers>(event: K, handler: SaharosEventHandlers[K]) => void;
+  emit: <K extends keyof SaharosEventHandlers>(event: K, data?: Parameters<SaharosEventHandlers[K]>[0]) => void;
   options: SaharosKanbanOptions;
 }
 

@@ -196,7 +196,7 @@ export class DragAndDropManager {
   /**
    * Handle pointer up event
    */
-  private handlePointerUp(e: PointerEvent): void {
+  private handlePointerUp(): void {
     if (this.state.isDragging) {
       this.endDrag(false);
     } else {
@@ -207,7 +207,7 @@ export class DragAndDropManager {
   /**
    * Handle pointer cancel event
    */
-  private handlePointerCancel(_e: PointerEvent): void {
+  private handlePointerCancel(): void {
     if (this.state.isDragging) {
       this.cancelDrag();
     }

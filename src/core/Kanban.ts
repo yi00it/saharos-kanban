@@ -482,7 +482,8 @@ export class SaharosKanban {
 
     // Setup autosave
     if (this.storageManager) {
-      this.eventBus.on('state:change', ({ state }) => {
+      this.eventBus.on('state:change', (data) => {
+        const { state } = data as { state: KanbanState };
         this.storageManager?.save(state);
       });
     }
@@ -509,7 +510,8 @@ export class SaharosKanban {
    */
   private setupDragEventHandlers(): void {
     // Handle drag end - update state
-    this.eventBus.on('card:drag:end', ({ card, from, to }) => {
+    this.eventBus.on('card:drag:end', (data) => {
+      const { card, from, to } = data as { card: Card; from: Column; to: Column };
       if (from.id === to.id) {
         // Same column - just re-render to update positions
         this.render();
@@ -592,7 +594,8 @@ export class SaharosKanban {
    */
   private setupA11yEventHandlers(): void {
     // Handle keyboard card moves
-    this.eventBus.on('a11y:move:card', ({ card, from, to }) => {
+    this.eventBus.on('a11y:move:card', (data) => {
+      const { card, to } = data as { card: Card; from: Column; to: Column };
       const success = this.stateManager.moveCard(card.id, to.id, card.laneId);
       if (success) {
         this.render();

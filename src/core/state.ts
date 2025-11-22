@@ -121,12 +121,15 @@ export class StateManager {
   updateLane(laneId: ID, patch: Partial<Lane>): Lane | null {
     const lanes = this.state.lanes ?? [];
     const index = lanes.findIndex((lane) => lane.id === laneId);
-    
+
     if (index === -1) return null;
-    
-    lanes[index] = { ...lanes[index], ...patch, id: laneId };
+
+    const currentLane = lanes[index];
+    if (!currentLane) return null;
+    const updatedLane: Lane = { ...currentLane, ...patch, id: laneId, title: patch.title ?? currentLane.title };
+    lanes[index] = updatedLane;
     this.state.lanes = lanes;
-    return lanes[index];
+    return updatedLane;
   }
 
   /**
@@ -165,11 +168,14 @@ export class StateManager {
    */
   updateColumn(columnId: ID, patch: Partial<Column>): Column | null {
     const index = this.state.columns.findIndex((col) => col.id === columnId);
-    
+
     if (index === -1) return null;
-    
-    this.state.columns[index] = { ...this.state.columns[index], ...patch, id: columnId };
-    return this.state.columns[index];
+
+    const currentColumn = this.state.columns[index];
+    if (!currentColumn) return null;
+    const updatedColumn: Column = { ...currentColumn, ...patch, id: columnId, title: patch.title ?? currentColumn.title };
+    this.state.columns[index] = updatedColumn;
+    return updatedColumn;
   }
 
   /**
@@ -207,11 +213,14 @@ export class StateManager {
    */
   updateCard(cardId: ID, patch: Partial<Card>): Card | null {
     const index = this.state.cards.findIndex((card) => card.id === cardId);
-    
+
     if (index === -1) return null;
-    
-    this.state.cards[index] = { ...this.state.cards[index], ...patch, id: cardId };
-    return this.state.cards[index];
+
+    const currentCard = this.state.cards[index];
+    if (!currentCard) return null;
+    const updatedCard: Card = { ...currentCard, ...patch, id: cardId, title: patch.title ?? currentCard.title, columnId: patch.columnId ?? currentCard.columnId };
+    this.state.cards[index] = updatedCard;
+    return updatedCard;
   }
 
   /**
@@ -219,10 +228,11 @@ export class StateManager {
    */
   removeCard(cardId: ID): boolean {
     const index = this.state.cards.findIndex((card) => card.id === cardId);
-    
+
     if (index === -1) return false;
-    
+
     const card = this.state.cards[index];
+    if (!card) return false;
     this.state.cards.splice(index, 1);
     this.reorderCards(card.columnId, card.laneId);
     return true;
@@ -232,7 +242,10 @@ export class StateManager {
    * Move a card to a new column/lane and/or position
    */
   moveCard(cardId: ID, toColumnId: ID, toLaneId?: ID | null, toIndex?: number): boolean {
-    const card = this.getCard(cardId);
+    const cardIndex = this.state.cards.findIndex((c) => c.id === cardId);
+    if (cardIndex === -1) return false;
+
+    const card = this.state.cards[cardIndex];
     if (!card) return false;
 
     const oldColumnId = card.columnId;

@@ -108,7 +108,7 @@ export class AccessibilityManager {
   /**
    * Add ARIA attributes to a lane element
    */
-  public enhanceLane(laneEl: HTMLElement, laneId: ID, laneTitle: string): void {
+  public enhanceLane(laneEl: HTMLElement, _laneId: ID, laneTitle: string): void {
     if (!this.options.enabled) return;
 
     const header = laneEl.querySelector('.sk-lane-header');
@@ -221,8 +221,8 @@ export class AccessibilityManager {
         };
 
         const state = this.getState();
-        const card = state.cards.find(c => c.id === this.currentFocus!.cardId);
-        if (card) {
+        const card = state.cards.find(c => c.id === this.currentFocus?.cardId);
+        if (card && this.currentFocus) {
           this.events.emit('a11y:focus:card', { card });
         }
       }
@@ -247,26 +247,32 @@ export class AccessibilityManager {
     if (!this.currentFocus) return;
 
     const state = this.getState();
-    const cards = state.cards.filter(c => c.columnId === this.currentFocus!.columnId);
-    
+    const cards = state.cards.filter(c => c.columnId === this.currentFocus?.columnId);
+
+    if (!this.currentFocus) return;
+
     if (this.currentFocus.cardId === null) {
       // On column header, move to first/last card
-      if (direction === 1 && cards.length > 0) {
-        this.focusCard(cards[0].id);
+      const firstCard = cards[0];
+      if (direction === 1 && firstCard) {
+        this.focusCard(firstCard.id);
       }
       return;
     }
 
     // Sort cards by order
     cards.sort((a, b) => (a.order || 0) - (b.order || 0));
-    
-    const currentIndex = cards.findIndex(c => c.id === this.currentFocus!.cardId);
-    if (currentIndex === -1) return;
+
+    const currentIndex = cards.findIndex(c => c.id === this.currentFocus?.cardId);
+    if (currentIndex === -1 || !this.currentFocus) return;
 
     const nextIndex = currentIndex + direction;
 
     if (nextIndex >= 0 && nextIndex < cards.length) {
-      this.focusCard(cards[nextIndex].id);
+      const nextCard = cards[nextIndex];
+      if (nextCard) {
+        this.focusCard(nextCard.id);
+      }
     } else if (direction === -1 && nextIndex < 0) {
       // Move to column header
       this.focusColumnHeader(this.currentFocus.columnId);
@@ -281,15 +287,16 @@ export class AccessibilityManager {
 
     const state = this.getState();
     const columns = state.columns.sort((a, b) => (a.order || 0) - (b.order || 0));
-    
-    const currentColumnIndex = columns.findIndex(c => c.id === this.currentFocus!.columnId);
-    if (currentColumnIndex === -1) return;
+
+    const currentColumnIndex = columns.findIndex(c => c.id === this.currentFocus?.columnId);
+    if (currentColumnIndex === -1 || !this.currentFocus) return;
 
     const nextColumnIndex = currentColumnIndex + direction;
     if (nextColumnIndex < 0 || nextColumnIndex >= columns.length) return;
 
     const nextColumn = columns[nextColumnIndex];
-    
+    if (!nextColumn) return;
+
     if (this.currentFocus.cardId === null) {
       // Moving between column headers
       this.focusColumnHeader(nextColumn.id);
@@ -298,7 +305,10 @@ export class AccessibilityManager {
       const cardsInNextColumn = state.cards.filter(c => c.columnId === nextColumn.id);
       if (cardsInNextColumn.length > 0) {
         cardsInNextColumn.sort((a, b) => (a.order || 0) - (b.order || 0));
-        this.focusCard(cardsInNextColumn[0].id);
+        const firstCard = cardsInNextColumn[0];
+        if (firstCard) {
+          this.focusCard(firstCard.id);
+        }
       } else {
         this.focusColumnHeader(nextColumn.id);
       }
@@ -313,11 +323,12 @@ export class AccessibilityManager {
 
     const state = this.getState();
     const cards = state.cards
-      .filter(c => c.columnId === this.currentFocus!.columnId)
+      .filter(c => c.columnId === this.currentFocus?.columnId)
       .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-    if (cards.length > 0) {
-      this.focusCard(cards[0].id);
+    const firstCard = cards[0];
+    if (firstCard) {
+      this.focusCard(firstCard.id);
     }
   }
 
@@ -329,11 +340,12 @@ export class AccessibilityManager {
 
     const state = this.getState();
     const cards = state.cards
-      .filter(c => c.columnId === this.currentFocus!.columnId)
+      .filter(c => c.columnId === this.currentFocus?.columnId)
       .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-    if (cards.length > 0) {
-      this.focusCard(cards[cards.length - 1].id);
+    const lastCard = cards[cards.length - 1];
+    if (lastCard) {
+      this.focusCard(lastCard.id);
     }
   }
 
@@ -344,7 +356,7 @@ export class AccessibilityManager {
     if (!this.currentFocus || this.currentFocus.cardId === null) return;
 
     const state = this.getState();
-    const card = state.cards.find(c => c.id === this.currentFocus!.cardId);
+    const card = state.cards.find(c => c.id === this.currentFocus?.cardId);
     if (!card) return;
 
     if (this.pickingCard === null) {
@@ -377,17 +389,16 @@ export class AccessibilityManager {
     if (!this.currentFocus || !this.pickingCard) return;
 
     const state = this.getState();
-    const fromColumn = state.columns.find(c => c.id === this.pickingCard!.columnId);
-    const toColumn = state.columns.find(c => c.id === this.currentFocus!.columnId);
+    const fromColumn = state.columns.find(c => c.id === this.pickingCard?.columnId);
+    const toColumn = state.columns.find(c => c.id === this.currentFocus?.columnId);
 
-    if (!fromColumn || !toColumn) return;
+    if (!fromColumn || !toColumn || !this.currentFocus) return;
 
     // Calculate new position
-    const cardsInColumn = state.cards.filter(c => c.columnId === this.currentFocus!.columnId);
     let newOrder = 0;
 
     if (this.currentFocus.cardId !== null) {
-      const targetCard = state.cards.find(c => c.id === this.currentFocus!.cardId);
+      const targetCard = state.cards.find(c => c.id === this.currentFocus?.cardId);
       if (targetCard) {
         newOrder = targetCard.order || 0;
       }
