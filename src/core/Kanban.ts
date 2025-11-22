@@ -218,7 +218,14 @@ export class SaharosKanban {
 
     // Use incremental rendering for single card addition
     addCardToDOM(this.container, newCard, this.options.renderCard);
-    this.enhanceAccessibility();
+
+    // Enhance only the new card with accessibility
+    if (this.a11yManager) {
+      const cardEl = this.container.querySelector(`.sk-card[data-card-id="${newCard.id}"]`) as HTMLElement;
+      if (cardEl) {
+        this.a11yManager.enhanceCard(cardEl, newCard);
+      }
+    }
 
     this.eventBus.emit('card:add', { card: newCard });
     this.eventBus.emit('state:change', { state: this.getState() });
@@ -233,7 +240,14 @@ export class SaharosKanban {
     if (updatedCard) {
       // Use incremental rendering for single card update
       updateCardInDOM(this.container, updatedCard, this.options.renderCard);
-      this.enhanceAccessibility();
+
+      // Enhance only the updated card with accessibility
+      if (this.a11yManager) {
+        const cardEl = this.container.querySelector(`.sk-card[data-card-id="${updatedCard.id}"]`) as HTMLElement;
+        if (cardEl) {
+          this.a11yManager.enhanceCard(cardEl, updatedCard);
+        }
+      }
 
       this.eventBus.emit('card:update', { card: updatedCard });
       this.eventBus.emit('state:change', { state: this.getState() });
@@ -277,7 +291,14 @@ export class SaharosKanban {
 
       // Use incremental rendering for card move
       moveCardInDOM(this.container, movedCard, to.columnId, this.options.renderCard);
-      this.enhanceAccessibility();
+
+      // Enhance only the moved card with accessibility
+      if (this.a11yManager) {
+        const cardEl = this.container.querySelector(`.sk-card[data-card-id="${movedCard.id}"]`) as HTMLElement;
+        if (cardEl) {
+          this.a11yManager.enhanceCard(cardEl, movedCard);
+        }
+      }
 
       // Only emit drag event if caused by API call (not pointer/keyboard)
       if (!opts?.cause || opts.cause === 'api') {
