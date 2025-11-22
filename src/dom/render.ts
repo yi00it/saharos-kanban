@@ -185,7 +185,7 @@ export function renderLane(
 }
 
 /**
- * Render the entire board
+ * Render the entire board (full render)
  */
 export function renderBoard(
   container: HTMLElement,
@@ -230,5 +230,94 @@ export function renderBoard(
     });
 
     container.appendChild(columnsContainer);
+  }
+}
+
+/**
+ * Incremental DOM Update - Add a card to existing DOM
+ */
+export function addCardToDOM(
+  container: HTMLElement,
+  card: Card,
+  customCardRenderer?: (card: Card, helpers: RenderHelpers) => HTMLElement
+): void {
+  const cardsContainer = container.querySelector(
+    `.sk-column[data-column-id="${card.columnId}"] .sk-cards`
+  );
+
+  if (!cardsContainer) return;
+
+  const helpers = createRenderHelpers();
+  const cardEl = customCardRenderer
+    ? customCardRenderer(card, helpers)
+    : defaultCardRenderer(card);
+
+  cardsContainer.appendChild(cardEl);
+}
+
+/**
+ * Incremental DOM Update - Update an existing card
+ */
+export function updateCardInDOM(
+  container: HTMLElement,
+  card: Card,
+  customCardRenderer?: (card: Card, helpers: RenderHelpers) => HTMLElement
+): void {
+  const existingCard = container.querySelector(
+    `.sk-card[data-card-id="${card.id}"]`
+  ) as HTMLElement;
+
+  if (!existingCard) return;
+
+  const helpers = createRenderHelpers();
+  const newCardEl = customCardRenderer
+    ? customCardRenderer(card, helpers)
+    : defaultCardRenderer(card);
+
+  // Preserve data attributes and classes from old element
+  newCardEl.dataset.cardId = String(card.id);
+
+  existingCard.replaceWith(newCardEl);
+}
+
+/**
+ * Incremental DOM Update - Remove a card from DOM
+ */
+export function removeCardFromDOM(container: HTMLElement, cardId: string | number): void {
+  const cardEl = container.querySelector(`.sk-card[data-card-id="${cardId}"]`);
+  if (cardEl) {
+    cardEl.remove();
+  }
+}
+
+/**
+ * Incremental DOM Update - Move a card between columns
+ */
+export function moveCardInDOM(
+  container: HTMLElement,
+  card: Card,
+  toColumnId: string | number,
+  customCardRenderer?: (card: Card, helpers: RenderHelpers) => HTMLElement
+): void {
+  const cardEl = container.querySelector(
+    `.sk-card[data-card-id="${card.id}"]`
+  ) as HTMLElement;
+
+  const targetCardsContainer = container.querySelector(
+    `.sk-column[data-column-id="${toColumnId}"] .sk-cards`
+  );
+
+  if (!cardEl || !targetCardsContainer) return;
+
+  // If custom renderer, re-render the card
+  if (customCardRenderer) {
+    const helpers = createRenderHelpers();
+    const newCardEl = customCardRenderer(card, helpers);
+    newCardEl.dataset.cardId = String(card.id);
+    cardEl.replaceWith(newCardEl);
+    targetCardsContainer.appendChild(newCardEl);
+  } else {
+    // Just move the existing element
+    targetCardsContainer.appendChild(cardEl);
   }
 }

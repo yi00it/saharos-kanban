@@ -9,7 +9,13 @@ import { StateManager } from './state';
 import { DragAndDropManager } from './dnd';
 import { StorageManager } from './storage';
 import { AccessibilityManager } from '../dom/a11y';
-import { renderBoard } from '../dom/render';
+import {
+  renderBoard,
+  addCardToDOM,
+  updateCardInDOM,
+  removeCardFromDOM,
+  moveCardInDOM
+} from '../dom/render';
 
 /**
  * SaharosKanban - Main class
@@ -24,6 +30,9 @@ export class SaharosKanban {
   private storageManager: StorageManager | null;
   private a11yManager: AccessibilityManager | null;
   private destroyed: boolean;
+
+  // Debounced rendering
+  private renderScheduled: boolean = false;
 
   constructor(containerOrSelector: string | HTMLElement, options: SaharosKanbanOptions = {}) {
     // Get container element
@@ -92,7 +101,7 @@ export class SaharosKanban {
     this.a11yManager = null;
 
     // Initial render
-    this.render();
+    this.scheduleRender(true);
 
     // Initialize drag and drop
     this.initializeDragAndDrop();
@@ -121,7 +130,7 @@ export class SaharosKanban {
    */
   loadState(state: KanbanState, opts?: { silent?: boolean }): void {
     this.stateManager.setState(state);
-    this.render();
+    this.scheduleRender(true);
 
     if (!opts?.silent) {
       this.eventBus.emit('state:change', { state: this.getState() });
@@ -132,7 +141,7 @@ export class SaharosKanban {
    * Refresh the board (re-render)
    */
   refresh(): void {
-    this.render();
+    this.scheduleRender(true);
   }
 
   /**
@@ -196,7 +205,7 @@ export class SaharosKanban {
    */
   setOptions(patch: Partial<SaharosKanbanOptions>): void {
     this.options = { ...this.options, ...patch };
-    this.render();
+    this.scheduleRender(true);
   }
 
   // ==================== Card CRUD Methods ====================
@@ -206,7 +215,11 @@ export class SaharosKanban {
    */
   addCard(card: Omit<Card, 'order'>, opts?: import('./types').AddItemOptions): Card {
     const newCard = this.stateManager.addCard(card as Card, opts?.index);
-    this.render();
+
+    // Use incremental rendering for single card addition
+    addCardToDOM(this.container, newCard, this.options.renderCard);
+    this.enhanceAccessibility();
+
     this.eventBus.emit('card:add', { card: newCard });
     this.eventBus.emit('state:change', { state: this.getState() });
     return newCard;
@@ -218,7 +231,10 @@ export class SaharosKanban {
   updateCard(cardId: ID, patch: Partial<Card>): Card | null {
     const updatedCard = this.stateManager.updateCard(cardId, patch);
     if (updatedCard) {
-      this.render();
+      // Use incremental rendering for single card update
+      updateCardInDOM(this.container, updatedCard, this.options.renderCard);
+      this.enhanceAccessibility();
+
       this.eventBus.emit('card:update', { card: updatedCard });
       this.eventBus.emit('state:change', { state: this.getState() });
     }
@@ -231,7 +247,9 @@ export class SaharosKanban {
   removeCard(cardId: ID): boolean {
     const success = this.stateManager.removeCard(cardId);
     if (success) {
-      this.render();
+      // Use incremental rendering for single card removal
+      removeCardFromDOM(this.container, cardId);
+
       this.eventBus.emit('card:remove', { cardId });
       this.eventBus.emit('state:change', { state: this.getState() });
     }
@@ -255,17 +273,21 @@ export class SaharosKanban {
 
     const success = this.stateManager.moveCard(cardId, to.columnId, to.laneId, to.index);
     if (success) {
-      this.render();
-      
+      const movedCard = this.stateManager.getCard(cardId)!;
+
+      // Use incremental rendering for card move
+      moveCardInDOM(this.container, movedCard, to.columnId, this.options.renderCard);
+      this.enhanceAccessibility();
+
       // Only emit drag event if caused by API call (not pointer/keyboard)
       if (!opts?.cause || opts.cause === 'api') {
         this.eventBus.emit('card:drag:end', {
-          card: this.stateManager.getCard(cardId)!,
+          card: movedCard,
           from: fromColumn!,
           to: toColumn,
         });
       }
-      
+
       this.eventBus.emit('state:change', { state: this.getState() });
     }
     return success;
@@ -289,7 +311,7 @@ export class SaharosKanban {
    */
   addColumn(column: Column, opts?: import('./types').AddItemOptions): Column {
     const newColumn = this.stateManager.addColumn(column, opts?.index);
-    this.render();
+    this.scheduleRender(true);
     this.eventBus.emit('column:add', { column: newColumn });
     this.eventBus.emit('state:change', { state: this.getState() });
     return newColumn;
@@ -301,7 +323,7 @@ export class SaharosKanban {
   updateColumn(columnId: ID, patch: Partial<Column>): Column | null {
     const updatedColumn = this.stateManager.updateColumn(columnId, patch);
     if (updatedColumn) {
-      this.render();
+      this.scheduleRender(true);
       this.eventBus.emit('column:update', { column: updatedColumn });
       this.eventBus.emit('state:change', { state: this.getState() });
     }
@@ -314,7 +336,7 @@ export class SaharosKanban {
   removeColumn(columnId: ID): boolean {
     const success = this.stateManager.removeColumn(columnId);
     if (success) {
-      this.render();
+      this.scheduleRender(true);
       this.eventBus.emit('column:remove', { columnId });
       this.eventBus.emit('state:change', { state: this.getState() });
     }
@@ -331,7 +353,7 @@ export class SaharosKanban {
     // Update column order
     const updatedColumn = this.stateManager.updateColumn(columnId, { order: toIndex });
     if (updatedColumn) {
-      this.render();
+      this.scheduleRender(true);
       this.eventBus.emit('column:move', { column: updatedColumn, toIndex });
       this.eventBus.emit('state:change', { state: this.getState() });
       return true;
@@ -346,7 +368,7 @@ export class SaharosKanban {
    */
   addLane(lane: Lane, opts?: import('./types').AddItemOptions): Lane {
     const newLane = this.stateManager.addLane(lane, opts?.index);
-    this.render();
+    this.scheduleRender(true);
     this.eventBus.emit('lane:add', { lane: newLane });
     this.eventBus.emit('state:change', { state: this.getState() });
     return newLane;
@@ -358,7 +380,7 @@ export class SaharosKanban {
   updateLane(laneId: ID, patch: Partial<Lane>): Lane | null {
     const updatedLane = this.stateManager.updateLane(laneId, patch);
     if (updatedLane) {
-      this.render();
+      this.scheduleRender(true);
       this.eventBus.emit('lane:update', { lane: updatedLane });
       this.eventBus.emit('state:change', { state: this.getState() });
     }
@@ -371,7 +393,7 @@ export class SaharosKanban {
   removeLane(laneId: ID): boolean {
     const success = this.stateManager.removeLane(laneId);
     if (success) {
-      this.render();
+      this.scheduleRender(true);
       this.eventBus.emit('lane:remove', { laneId });
       this.eventBus.emit('state:change', { state: this.getState() });
     }
@@ -388,7 +410,7 @@ export class SaharosKanban {
     // Update lane order
     const updatedLane = this.stateManager.updateLane(laneId, { order: toIndex });
     if (updatedLane) {
-      this.render();
+      this.scheduleRender(true);
       this.eventBus.emit('lane:move', { lane: updatedLane, toIndex });
       this.eventBus.emit('state:change', { state: this.getState() });
       return true;
@@ -432,6 +454,22 @@ export class SaharosKanban {
   /**
    * Render the board
    */
+  /**
+   * Schedule a render (debounced with requestAnimationFrame)
+   */
+  private scheduleRender(_force = false): void {
+    if (!this.renderScheduled) {
+      this.renderScheduled = true;
+      requestAnimationFrame(() => {
+        this.render();
+        this.renderScheduled = false;
+      });
+    }
+  }
+
+  /**
+   * Perform the actual render
+   */
   private render(): void {
     const lanes = this.stateManager.getLanes();
     const columns = this.stateManager.getColumns();
@@ -450,6 +488,7 @@ export class SaharosKanban {
     // Enhance with accessibility features after rendering
     this.enhanceAccessibility();
   }
+
 
   /**
    * Check if board is destroyed
@@ -514,12 +553,12 @@ export class SaharosKanban {
       const { card, from, to } = data as { card: Card; from: Column; to: Column };
       if (from.id === to.id) {
         // Same column - just re-render to update positions
-        this.render();
+        this.scheduleRender(true);
       } else {
         // Different column - move card
         const success = this.stateManager.moveCard(card.id, to.id, card.laneId);
         if (success) {
-          this.render();
+          this.scheduleRender(true);
           this.eventBus.emit('state:change', { state: this.getState() });
         }
       }
@@ -598,7 +637,7 @@ export class SaharosKanban {
       const { card, to } = data as { card: Card; from: Column; to: Column };
       const success = this.stateManager.moveCard(card.id, to.id, card.laneId);
       if (success) {
-        this.render();
+        this.scheduleRender(true);
         this.eventBus.emit('state:change', { state: this.getState() });
       }
     });
