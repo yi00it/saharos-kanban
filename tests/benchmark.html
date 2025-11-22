@@ -397,7 +397,8 @@
 
       saharosInstance = new SaharosKanban('#board-saharos', {
         columns,
-        cards
+        cards,
+        a11y: { enabled: false } // Disable for fair comparison with jKanban
       });
 
       const endInit = performance.now();
