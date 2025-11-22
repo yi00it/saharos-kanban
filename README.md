@@ -377,9 +377,11 @@ When providing custom render functions, you **must** include specific classes an
 
 #### Custom Card Rendering
 
-⚠️ **IMPORTANT:** Your custom `renderCard` function **must** return an element with:
-- **Class:** `.sk-card` (required for drag & drop functionality)
-- **Attribute:** `data-card-id="${card.id}"` (required for card identification)
+⚠️ **REQUIRED ATTRIBUTES:** When using custom `renderCard()`, you **MUST** include:
+- **Class:** `.sk-card` (required for drag functionality)
+- **Attribute:** `data-card-id="${card.id}"` (required for identification)
+
+Without these, drag & drop will not work.
 
 **Example:**
 ```javascript
@@ -590,14 +592,14 @@ Fired when a card is dropped in a new column. This is the most commonly used eve
     meta?: object             // Custom metadata
   },
   from: {
-    id: string,               // Source column ID (e.g., 'todo')
+    id: string,               // Source column ID (e.g., 'todo') ← Extract column ID from from.id
     title: string,            // Source column title (e.g., 'To Do')
     laneId?: string | null,   // Source lane ID
     order?: number,           // Column order
     meta?: object             // Source column metadata
   },
   to: {
-    id: string,               // Target column ID (e.g., 'in-progress')
+    id: string,               // Target column ID (e.g., 'in-progress') ← Extract column ID from to.id
     title: string,            // Target column title (e.g., 'In Progress')
     laneId?: string | null,   // Target lane ID
     order?: number,           // Column order
@@ -605,6 +607,8 @@ Fired when a card is dropped in a new column. This is the most commonly used eve
   }
 }
 ```
+
+**Important:** To get column IDs, use `from.id` and `to.id` (not `from.columnId`)
 
 **Example Usage:**
 

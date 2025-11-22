@@ -144,24 +144,28 @@ board.moveLane('team1', 0); // Move to top
 
 ## 🎨 Custom Rendering
 
-### ⚠️ IMPORTANT: Required Attributes
+### ⚠️ REQUIRED ATTRIBUTES
 
-When creating custom renderers, you **MUST** include:
+When using custom `renderCard()`, you **MUST** include:
+- **Class:** `.sk-card` (required for drag functionality)
+- **Attribute:** `data-card-id="${card.id}"` (required for identification)
+
+Without these, drag & drop will not work.
 
 #### For Cards:
 ```javascript
 renderCard: (card, helpers) => {
   const el = helpers.createElement('div');
-  
+
   // REQUIRED: .sk-card class
   el.className = 'sk-card';
-  
+
   // REQUIRED: data-card-id attribute
   el.dataset.cardId = String(card.id);
-  
+
   // Your custom content
   el.innerHTML = `<h3>${helpers.escapeHtml(card.title)}</h3>`;
-  
+
   return el;
 }
 ```
@@ -237,10 +241,12 @@ helpers.defaultLaneHeaderRenderer(lane)
 ```javascript
 {
   card: { id, title, columnId, meta, ... },
-  from: { id, title, meta },  // Source column
-  to: { id, title, meta }      // Target column
+  from: { id, title, meta },  // Source column (extract ID using from.id)
+  to: { id, title, meta }      // Target column (extract ID using to.id)
 }
 ```
+
+**Important:** To get column IDs, use `from.id` and `to.id` (not `from.columnId`)
 
 **Example - Backend Sync:**
 ```javascript
@@ -248,11 +254,14 @@ board.on('card:drag:end', ({ card, from, to }) => {
   // Update backend
   fetch(`/api/cards/${card.id}`, {
     method: 'PATCH',
-    body: JSON.stringify({ status: to.id })  // ← Use to.id
+    body: JSON.stringify({
+      status: to.id,              // ← Use to.id for new column ID
+      previousStatus: from.id     // ← Use from.id for old column ID
+    })
   });
-  
+
   // Show notification
-  showToast(`Moved to ${to.title}`);  // ← Use to.title
+  showToast(`Moved to ${to.title}`);  // ← Use to.title for display
 });
 ```
 
