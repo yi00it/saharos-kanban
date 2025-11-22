@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Saharos-Kanban 1.0.2 vs jKanban – Performance Benchmark</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: #020617;
+      color: #e5e7eb;
+    }
+
+    h1 {
+      margin-bottom: 4px;
+      font-size: 20px;
+    }
+
+    p {
+      margin-top: 4px;
+      margin-bottom: 8px;
+      color: #9ca3af;
+      font-size: 13px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .panel {
+      background: #020617;
+      border-radius: 12px;
+      padding: 12px;
+      border: 1px solid #1e293b;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 420px;
+    }
+
+    .board-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .board-title {
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge {
+      font-size: 10px;
+      border-radius: 999px;
+      padding: 2px 8px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .version {
+      font-size: 10px;
+      color: #6b7280;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    button {
+      cursor: pointer;
+      border-radius: 999px;
+      border: 1px solid #1e293b;
+      background: #020617;
+      color: #e5e7eb;
+      padding: 4px 10px;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.12s ease, transform 0.05s ease;
+    }
+
+    button:hover {
+      background: #111827;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .board-container {
+      flex: 1;
+      border-radius: 10px;
+      overflow: auto;
+      background: #020617;
+      border: 1px dashed #1e293b;
+      padding: 6px;
+    }
+
+    .metrics {
+      margin-top: 6px;
+      font-size: 10px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 4px;
+    }
+
+    .metric {
+      padding: 4px 6px;
+      border-radius: 6px;
+      background: #020617;
+      border: 1px solid #111827;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .metric-label {
+      color: #6b7280;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .metric-value {
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    .legend {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .legend code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 11px;
+      background: #020617;
+      padding: 1px 4px;
+      border-radius: 4px;
+      border: 1px solid #1e293b;
+    }
+
+    .global-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin-top: 10px;
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <!-- jKanban 1.3.1 CSS & JS (CDN) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jkanban@1.3.1/dist/jkanban.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/jkanban@1.3.1/dist/jkanban.min.js"></script>
+
+  <!-- Saharos-Kanban 1.0.2 CSS from npm (jsDelivr) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/saharos-kanban@1.0.2/dist/saharos-kanban.css" />
+</head>
+<body>
+  <h1>Saharos-Kanban 1.0.2 vs jKanban – Performance Benchmark</h1>
+  <p>
+    Both boards use the same generated dataset (same columns, same number of cards).
+    We measure initialization and render time, plus some DOM stats, for each library.
+  </p>
+
+  <div class="legend">
+    <strong>Legend:</strong>
+    <code>Init</code> = time to construct the board instance.<br />
+    <code>Render</code> = time until the browser is idle after DOM updates.<br />
+    <code>Total</code> = Init + Render.<br />
+    <code>DOM</code> = number of elements inside the board container.<br />
+    <code>HTML</code> = <code>innerHTML.length</code> of the board container (proxy for DOM weight).<br />
+  </div>
+
+  <div class="global-controls">
+    <span>Global test:</span>
+    <button data-global-count="100">100 cards</button>
+    <button data-global-count="500">500 cards</button>
+    <button data-global-count="1000">1000 cards</button>
+    <button id="btn-clear">Clear both boards</button>
+  </div>
+
+  <div class="layout">
+    <!-- jKanban panel -->
+    <div class="panel" id="panel-jkanban">
+      <div class="board-header">
+        <div class="board-title">
+          jKanban
+          <span class="badge">Legacy baseline</span>
+        </div>
+        <div class="version">v1.3.1</div>
+        <div class="controls">
+          <button data-lib="jkanban" data-count="100">100</button>
+          <button data-lib="jkanban" data-count="500">500</button>
+          <button data-lib="jkanban" data-count="1000">1000</button>
+        </div>
+      </div>
+      <div class="board-container" id="board-jkanban"></div>
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Init (ms)</div>
+          <div class="metric-value" id="jk-init">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Render (ms)</div>
+          <div class="metric-value" id="jk-render">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Total (ms)</div>
+          <div class="metric-value" id="jk-total">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">DOM nodes</div>
+          <div class="metric-value" id="jk-dom">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">HTML size</div>
+          <div class="metric-value" id="jk-html">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Cards</div>
+          <div class="metric-value" id="jk-cards">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saharos-Kanban panel -->
+    <div class="panel" id="panel-saharos">
+      <div class="board-header">
+        <div class="board-title">
+          Saharos-Kanban
+          <span class="badge">Zero-dependency, modern</span>
+        </div>
+        <div class="version">v1.0.2</div>
+        <div class="controls">
+          <button data-lib="saharos" data-count="100">100</button>
+          <button data-lib="saharos" data-count="500">500</button>
+          <button data-lib="saharos" data-count="1000">1000</button>
+        </div>
+      </div>
+      <div class="board-container" id="board-saharos"></div>
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Init (ms)</div>
+          <div class="metric-value" id="sh-init">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Render (ms)</div>
+          <div class="metric-value" id="sh-render">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Total (ms)</div>
+          <div class="metric-value" id="sh-total">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">DOM nodes</div>
+          <div class="metric-value" id="sh-dom">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">HTML size</div>
+          <div class="metric-value" id="sh-html">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Cards</div>
+          <div class="metric-value" id="sh-cards">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer-note">
+    Tip: Open DevTools → Performance or Memory while running tests to inspect flame charts, layout thrashing, FPS, and memory usage.
+  </p>
+
+  <!-- All logic in one ESM script, Saharos-Kanban pinned to 1.0.2 -->
+  <script type="module">
+    import { SaharosKanban } from 'https://esm.run/saharos-kanban@1.0.2';
+
+    let jKanbanInstance = null;
+    let saharosInstance = null;
+
+    // -----------------------
+    // Dataset generator
+    // -----------------------
+    function generateDataset(cardCount) {
+      const columnCount = 4;
+      const cardsPerColumn = Math.max(1, Math.floor(cardCount / columnCount));
+      const columns = [];
+      const cards = [];
+
+      for (let c = 0; c < columnCount; c++) {
+        const columnId = 'col-' + (c + 1);
+        columns.push({ id: columnId, title: 'Column ' + (c + 1) });
+
+        for (let i = 0; i < cardsPerColumn; i++) {
+          const cardId = columnId + '-card-' + (i + 1);
+          cards.push({
+            id: cardId,
+            title: 'Task #' + (i + 1) + ' in ' + columnId,
+            columnId
+          });
+        }
+      }
+
+      return { columns, cards };
+    }
+
+    // -----------------------
+    // jKanban integration
+    // -----------------------
+    function mountJKanban(cardCount) {
+      const { columns, cards } = generateDataset(cardCount);
+
+      const container = document.getElementById('board-jkanban');
+      container.innerHTML = '';
+      jKanbanInstance = null;
+
+      const startInit = performance.now();
+
+      jKanbanInstance = new window.jKanban({
+        element: '#board-jkanban',
+        gutter: '8px',
+        widthBoard: '260px',
+        boards: columns.map((col) => ({
+          id: col.id,
+          title: col.title,
+          item: cards
+            .filter((card) => card.columnId === col.id)
+            .map((card) => ({
+              id: card.id,
+              title: card.title
+            }))
+        }))
+      });
+
+      const endInit = performance.now();
+
+      requestAnimationFrame(() => {
+        const endRender = performance.now();
+        const metrics = collectDomMetrics('board-jkanban', cards.length);
+        updateMetrics('jk', endInit - startInit, endRender - endInit, metrics);
+      });
+    }
+
+    // -----------------------
+    // Saharos-Kanban integration
+    // -----------------------
+    function mountSaharos(cardCount) {
+      const { columns, cards } = generateDataset(cardCount);
+
+      const container = document.getElementById('board-saharos');
+      container.innerHTML = '';
+      saharosInstance = null;
+
+      const startInit = performance.now();
+
+      saharosInstance = new SaharosKanban('#board-saharos', {
+        columns,
+        cards
+      });
+
+      const endInit = performance.now();
+
+      requestAnimationFrame(() => {
+        const endRender = performance.now();
+        const metrics = collectDomMetrics('board-saharos', cards.length);
+        updateMetrics('sh', endInit - startInit, endRender - endInit, metrics);
+      });
+    }
+
+    // -----------------------
+    // Collect DOM metrics
+    // -----------------------
+    function collectDomMetrics(containerId, cardCount) {
+      const el = document.getElementById(containerId);
+      const domNodes = el ? el.getElementsByTagName('*').length : 0;
+      const htmlSize = el ? el.innerHTML.length : 0;
+      return {
+        domNodes,
+        htmlSize,
+        cards: cardCount
+      };
+    }
+
+    // -----------------------
+    // Metrics UI
+    // -----------------------
+    function updateMetrics(prefix, initMs, renderMs, extra) {
+      const total = initMs + renderMs;
+
+      const initEl = document.getElementById(prefix + '-init');
+      const renderEl = document.getElementById(prefix + '-render');
+      const totalEl = document.getElementById(prefix + '-total');
+      const domEl = document.getElementById(prefix + '-dom');
+      const htmlEl = document.getElementById(prefix + '-html');
+      const cardsEl = document.getElementById(prefix + '-cards');
+
+      initEl.textContent = initMs.toFixed(1);
+      renderEl.textContent = renderMs.toFixed(1);
+      totalEl.textContent = total.toFixed(1);
+
+      if (extra) {
+        domEl.textContent = extra.domNodes.toString();
+        htmlEl.textContent = extra.htmlSize.toString();
+        cardsEl.textContent = extra.cards.toString();
+      }
+    }
+
+    function clearBoards() {
+      document.getElementById('board-jkanban').innerHTML = '';
+      document.getElementById('board-saharos').innerHTML = '';
+      [
+        'jk-init','jk-render','jk-total','jk-dom','jk-html','jk-cards',
+        'sh-init','sh-render','sh-total','sh-dom','sh-html','sh-cards'
+      ].forEach((id) => {
+        const el = document.getElementById(id);
+        el.textContent = '—';
+      });
+    }
+
+    // -----------------------
+    // Controls wiring
+    // -----------------------
+    function attachControls() {
+      // Per-panel controls
+      document.querySelectorAll('.controls button[data-lib]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const lib = btn.getAttribute('data-lib');
+          const count = parseInt(btn.getAttribute('data-count') || '100', 10);
+          if (lib === 'jkanban') {
+            mountJKanban(count);
+          } else {
+            mountSaharos(count);
+          }
+        });
+      });
+
+      // Global controls
+      document.querySelectorAll('button[data-global-count]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const count = parseInt(btn.getAttribute('data-global-count') || '100', 10);
+          mountJKanban(count);
+          mountSaharos(count);
+        });
+      });
+
+      const clearBtn = document.getElementById('btn-clear');
+      clearBtn.addEventListener('click', () => {
+        clearBoards();
+      });
+    }
+
+    // -----------------------
+    // Boot
+    // -----------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      attachControls();
+      // Default initial test
+      mountJKanban(100);
+      mountSaharos(100);
+    });
+  </script>
+</body>
+</html>
