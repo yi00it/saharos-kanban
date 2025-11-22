@@ -131,9 +131,6 @@
   margin-bottom: var(--sk-spacing-md);
   background: var(--sk-lane-header-bg);
   border-bottom: 1px solid var(--sk-lane-border-color);
-}
-
-.sk-lane-title {
   font-size: var(--sk-font-size-lg);
   font-weight: var(--sk-font-weight-semibold);
   color: var(--sk-text-primary);
@@ -160,15 +157,11 @@
   padding: var(--sk-spacing-md) var(--sk-spacing-lg);
   background: var(--sk-column-header-bg);
   border-bottom: 1px solid var(--sk-border-color);
-}
-
-.sk-column-title {
   font-size: var(--sk-font-size-md);
   font-weight: var(--sk-font-weight-semibold);
   color: var(--sk-text-primary);
   line-height: var(--sk-line-height-tight);
   margin: 0;
-  padding: 0;
 }
 
 /* Cards container */
@@ -218,13 +211,6 @@
   margin: 0 0 var(--sk-spacing-sm) 0;
 }
 
-.sk-card-labels {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sk-spacing-xs);
-  margin-top: var(--sk-spacing-sm);
-}
-
 .sk-card-label {
   display: inline-block;
   background: var(--sk-accent-bg);
@@ -236,6 +222,8 @@
   border-radius: var(--sk-radius-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin-top: var(--sk-spacing-sm);
+  margin-right: var(--sk-spacing-xs);
 }
 
 /* Dragging states (for Milestone 2) */

@@ -55,10 +55,6 @@
   border-bottom: none;
 }
 
-.sk-theme-colorful .sk-column-title {
-  color: white;
-}
-
 /* Enhanced shadows */
 .sk-theme-colorful .sk-column {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
@@ -84,9 +80,6 @@
   border-radius: var(--sk-radius-lg);
   padding: var(--sk-spacing-lg);
   margin-bottom: var(--sk-spacing-xl);
-}
-
-.sk-theme-colorful .sk-lane-title {
   color: white;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }

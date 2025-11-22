@@ -15,10 +15,17 @@ function escapeHtml(str: string): string {
 }
 
 /**
- * Render helpers passed to custom render hooks
+ * Global render helpers instance - reused across all renders to reduce overhead
+ */
+let globalHelpers: RenderHelpers | null = null;
+
+/**
+ * Get or create render helpers (singleton pattern)
  */
 export function createRenderHelpers(): RenderHelpers {
-  return {
+  if (globalHelpers) return globalHelpers;
+
+  globalHelpers = {
     createElement: (tag: string, className?: string): HTMLElement => {
       const el = document.createElement(tag);
       if (className) el.className = className;
@@ -35,21 +42,25 @@ export function createRenderHelpers(): RenderHelpers {
     defaultColumnHeaderRenderer,
     defaultLaneHeaderRenderer,
   };
+
+  return globalHelpers;
 }
 
 /**
- * Default card renderer
+ * Default card renderer - optimized for minimal DOM nodes
  */
 export function defaultCardRenderer(card: Card): HTMLElement {
   const cardEl = document.createElement('div');
   cardEl.className = 'sk-card';
   cardEl.dataset.cardId = String(card.id);
 
+  // Title - use direct text node with class for styling
   const title = document.createElement('div');
   title.className = 'sk-card-title';
   title.textContent = card.title;
   cardEl.appendChild(title);
 
+  // Description - only create if exists
   if (card.description) {
     const desc = document.createElement('div');
     desc.className = 'sk-card-description';
@@ -57,50 +68,36 @@ export function defaultCardRenderer(card: Card): HTMLElement {
     cardEl.appendChild(desc);
   }
 
+  // Labels - inline without wrapper container to save DOM nodes
   if (card.labels && card.labels.length > 0) {
-    const labelsContainer = document.createElement('div');
-    labelsContainer.className = 'sk-card-labels';
-    
     card.labels.forEach((label) => {
       const labelEl = document.createElement('span');
       labelEl.className = 'sk-card-label';
       labelEl.textContent = label;
-      labelsContainer.appendChild(labelEl);
+      cardEl.appendChild(labelEl);
     });
-    
-    cardEl.appendChild(labelsContainer);
   }
 
   return cardEl;
 }
 
 /**
- * Default column header renderer
+ * Default column header renderer - simplified structure
  */
 export function defaultColumnHeaderRenderer(col: Column): HTMLElement {
-  const header = document.createElement('div');
+  const header = document.createElement('h3');
   header.className = 'sk-column-header';
-  
-  const title = document.createElement('h3');
-  title.className = 'sk-column-title';
-  title.textContent = col.title;
-  header.appendChild(title);
-
+  header.textContent = col.title;
   return header;
 }
 
 /**
- * Default lane header renderer
+ * Default lane header renderer - simplified structure
  */
 export function defaultLaneHeaderRenderer(lane: Lane): HTMLElement {
-  const header = document.createElement('div');
+  const header = document.createElement('h2');
   header.className = 'sk-lane-header';
-  
-  const title = document.createElement('h2');
-  title.className = 'sk-lane-title';
-  title.textContent = lane.title;
-  header.appendChild(title);
-
+  header.textContent = lane.title;
   return header;
 }
 
@@ -111,16 +108,17 @@ export function renderColumn(
   column: Column,
   cards: Card[],
   customCardRenderer?: (card: Card, helpers: RenderHelpers) => HTMLElement,
-  customHeaderRenderer?: (col: Column, helpers: RenderHelpers) => HTMLElement
+  customHeaderRenderer?: (col: Column, helpers: RenderHelpers) => HTMLElement,
+  helpers?: RenderHelpers
 ): HTMLElement {
-  const helpers = createRenderHelpers();
+  const renderHelpers = helpers || createRenderHelpers();
   const columnEl = document.createElement('div');
   columnEl.className = 'sk-column';
   columnEl.dataset.columnId = String(column.id);
 
   // Header
   const header = customHeaderRenderer
-    ? customHeaderRenderer(column, helpers)
+    ? customHeaderRenderer(column, renderHelpers)
     : defaultColumnHeaderRenderer(column);
   columnEl.appendChild(header);
 
@@ -130,7 +128,7 @@ export function renderColumn(
 
   cards.forEach((card) => {
     const cardEl = customCardRenderer
-      ? customCardRenderer(card, helpers)
+      ? customCardRenderer(card, renderHelpers)
       : defaultCardRenderer(card);
     cardsContainer.appendChild(cardEl);
   });
@@ -149,16 +147,17 @@ export function renderLane(
   cards: Card[],
   customCardRenderer?: (card: Card, helpers: RenderHelpers) => HTMLElement,
   customColumnHeaderRenderer?: (col: Column, helpers: RenderHelpers) => HTMLElement,
-  customLaneHeaderRenderer?: (lane: Lane, helpers: RenderHelpers) => HTMLElement
+  customLaneHeaderRenderer?: (lane: Lane, helpers: RenderHelpers) => HTMLElement,
+  helpers?: RenderHelpers
 ): HTMLElement {
-  const helpers = createRenderHelpers();
+  const renderHelpers = helpers || createRenderHelpers();
   const laneEl = document.createElement('div');
   laneEl.className = 'sk-lane';
   laneEl.dataset.laneId = String(lane.id);
 
   // Lane header
   const header = customLaneHeaderRenderer
-    ? customLaneHeaderRenderer(lane, helpers)
+    ? customLaneHeaderRenderer(lane, renderHelpers)
     : defaultLaneHeaderRenderer(lane);
   laneEl.appendChild(header);
 
@@ -170,7 +169,7 @@ export function renderLane(
     const columnCards = cards.filter(
       (card) => card.columnId === column.id && card.laneId === lane.id
     );
-    const columnEl = renderColumn(column, columnCards, customCardRenderer, customColumnHeaderRenderer);
+    const columnEl = renderColumn(column, columnCards, customCardRenderer, customColumnHeaderRenderer, renderHelpers);
     columnsContainer.appendChild(columnEl);
   });
 
@@ -195,6 +194,9 @@ export function renderBoard(
   container.innerHTML = '';
   container.className = 'sk-board';
 
+  // Create render helpers once for entire board render
+  const helpers = createRenderHelpers();
+
   if (lanes.length > 0) {
     // Render with lanes
     lanes.forEach((lane) => {
@@ -205,7 +207,8 @@ export function renderBoard(
         cards,
         customCardRenderer,
         customColumnHeaderRenderer,
-        customLaneHeaderRenderer
+        customLaneHeaderRenderer,
+        helpers
       );
       container.appendChild(laneEl);
     });
@@ -216,7 +219,7 @@ export function renderBoard(
 
     columns.forEach((column) => {
       const columnCards = cards.filter((card) => card.columnId === column.id);
-      const columnEl = renderColumn(column, columnCards, customCardRenderer, customColumnHeaderRenderer);
+      const columnEl = renderColumn(column, columnCards, customCardRenderer, customColumnHeaderRenderer, helpers);
       columnsContainer.appendChild(columnEl);
     });
 
