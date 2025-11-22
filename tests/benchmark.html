@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Saharos-Kanban 1.1.0 vs jKanban – Performance Benchmark</title>
+  <title>Saharos-Kanban 1.1.1 vs jKanban – Performance Benchmark</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
@@ -185,11 +185,11 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jkanban@1.3.1/dist/jkanban.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/jkanban@1.3.1/dist/jkanban.min.js"></script>
 
-  <!-- Saharos-Kanban 1.1.0 CSS from npm (jsDelivr) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/saharos-kanban@1.1.0/dist/saharos-kanban.css" />
+  <!-- Saharos-Kanban 1.1.1 CSS from npm (jsDelivr) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/saharos-kanban@1.1.1/dist/saharos-kanban.css" />
 </head>
 <body>
-  <h1>Saharos-Kanban 1.1.0 vs jKanban – Performance Benchmark</h1>
+  <h1>Saharos-Kanban 1.1.1 vs jKanban – Performance Benchmark</h1>
   <p>
     Both boards use the same generated dataset (same columns, same number of cards).
     We measure initialization and render time, plus some DOM stats, for each library.
@@ -272,7 +272,7 @@
           Saharos-Kanban
           <span class="badge">Zero-dependency, modern</span>
         </div>
-        <div class="version">v1.1.0</div>
+        <div class="version">v1.1.1</div>
         <div class="controls">
           <button data-lib="saharos" data-count="100">100</button>
           <button data-lib="saharos" data-count="500">500</button>
@@ -313,9 +313,9 @@
     Tip: Open DevTools → Performance or Memory while running tests to inspect flame charts, layout thrashing, FPS, and memory usage.
   </p>
 
-  <!-- All logic in one ESM script, Saharos-Kanban pinned to 1.1.0 -->
+  <!-- All logic in one ESM script, Saharos-Kanban pinned to 1.1.1 -->
   <script type="module">
-    import { SaharosKanban } from 'https://esm.run/saharos-kanban@1.1.0';
+    import { SaharosKanban } from 'https://esm.run/saharos-kanban@1.1.1';
 
     let jKanbanInstance = null;
     let saharosInstance = null;
@@ -483,7 +483,7 @@
 
       const report = `PERFORMANCE BENCHMARK REPORT
 ========================================
-Library Comparison: saharos-kanban v1.1.0 vs jKanban v1.3.1
+Library Comparison: saharos-kanban v1.1.1 vs jKanban v1.3.1
 Test Date: ${new Date().toISOString().split('T')[0]}
 Cards Tested: ${jk.cards}
 
@@ -508,7 +508,7 @@ PERFORMANCE COMPARISON:
 SAHAROS-KANBAN ADVANTAGES:
 ✓ Modern TypeScript architecture
 ✓ Zero dependencies
-✓ Incremental DOM updates (v1.1.0+)
+✓ Incremental DOM updates (v1.1.1+)
 ✓ Debounced rendering with RAF
 ✓ Full ARIA accessibility
 ✓ Keyboard navigation
