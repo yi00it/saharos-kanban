@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saharos Kanban - Interactive Playground</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --bg-dark: #0f172a;
+            --bg-medium: #1e293b;
+            --bg-light: #334155;
+            --text-light: #f1f5f9;
+            --text-medium: #cbd5e1;
+            --text-dark: #64748b;
+            --border-color: #475569;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Header */
+        .playground-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            padding: 1rem 2rem;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 100;
+        }
+
+        .playground-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .playground-header .logo {
+            font-size: 2rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: white;
+            color: var(--primary-dark);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Main Layout */
+        .playground-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            height: calc(100vh - 73px);
+            overflow: hidden;
+        }
+
+        .board-panel {
+            background: var(--bg-medium);
+            padding: 1.5rem;
+            overflow: auto;
+            position: relative;
+        }
+
+        .controls-panel {
+            background: var(--bg-dark);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Tabs */
+        .tabs-header {
+            display: flex;
+            background: var(--bg-medium);
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1rem;
+            background: transparent;
+            border: none;
+            color: var(--text-dark);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-medium);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            color: var(--primary-light);
+            border-bottom-color: var(--primary-light);
+        }
+
+        .tabs-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* Form Controls */
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-medium);
+        }
+
+        .control-group select,
+        .control-group input[type="text"],
+        .control-group input[type="number"],
+        .control-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            background: var(--bg-light);
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+
+        .control-group select:focus,
+        .control-group input:focus,
+        .control-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 1.25rem;
+            height: 1.25rem;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        /* Code Viewer */
+        .code-viewer {
+            position: relative;
+        }
+
+        .code-viewer pre {
+            background: var(--bg-medium);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-size: 0.8125rem;
+            line-height: 1.6;
+            border: 1px solid var(--border-color);
+        }
+
+        .code-viewer code {
+            color: var(--text-light);
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .copy-btn.copied {
+            background: var(--success);
+        }
+
+        /* Event Log */
+        .event-log {
+            background: var(--bg-medium);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 0.8125rem;
+        }
+
+        .event-item {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: var(--bg-light);
+            border-radius: 0.25rem;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .event-item .event-type {
+            font-weight: 600;
+            color: var(--primary-light);
+        }
+
+        .event-item .event-time {
+            font-size: 0.75rem;
+            color: var(--text-dark);
+            margin-left: 0.5rem;
+        }
+
+        .event-item .event-details {
+            margin-top: 0.25rem;
+            color: var(--text-medium);
+            font-family: monospace;
+        }
+
+        .clear-log-btn {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        /* CRUD Form */
+        .crud-form {
+            background: var(--bg-medium);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .crud-form h3 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: var(--text-light);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            opacity: 0.9;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            opacity: 0.9;
+        }
+
+        /* Settings Grid */
+        .settings-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .setting-card {
+            background: var(--bg-medium);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .setting-card h3 {
+            font-size: 0.9375rem;
+            margin-bottom: 1rem;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        /* Help Section */
+        .help-section {
+            background: var(--bg-medium);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .help-section h4 {
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary-light);
+        }
+
+        .help-section kbd {
+            background: var(--bg-light);
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            border: 1px solid var(--border-color);
+            font-family: monospace;
+        }
+
+        .help-section ul {
+            list-style: none;
+            font-size: 0.8125rem;
+            color: var(--text-medium);
+        }
+
+        .help-section li {
+            padding: 0.25rem 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .playground-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 400px;
+            }
+
+            .controls-panel {
+                border-left: none;
+                border-top: 1px solid var(--border-color);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .playground-header {
+                padding: 0.75rem 1rem;
+            }
+
+            .playground-header h1 {
+                font-size: 1.125rem;
+            }
+
+            .header-actions {
+                gap: 0.5rem;
+            }
+
+            .btn {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.8125rem;
+            }
+
+            .tabs-content {
+                padding: 1rem;
+            }
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            background: var(--bg-medium);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .notification.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Loading State */
+        .loading {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Info Banner */
+        .info-banner {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(79, 70, 229, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        .info-banner strong {
+            color: var(--primary-light);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="playground-header">
+        <h1>
+            <span class="logo">🎮</span>
+            <div>
+                <div>Saharos Kanban Playground</div>
+            </div>
+        </h1>
+        <div class="header-actions">
+            <button class="btn btn-secondary" id="reset-btn">🔄 Reset</button>
+            <button class="btn btn-primary" id="export-btn">📋 Export Code</button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="playground-container">
+        <!-- Board Panel -->
+        <div class="board-panel">
+            <div id="kanban-board"></div>
+        </div>
+
+        <!-- Controls Panel -->
+        <div class="controls-panel">
+            <!-- Tabs Header -->
+            <div class="tabs-header">
+                <button class="tab-btn active" data-tab="config">⚙️ Config</button>
+                <button class="tab-btn" data-tab="code">💻 Code</button>
+                <button class="tab-btn" data-tab="crud">✏️ CRUD</button>
+                <button class="tab-btn" data-tab="events">📊 Events</button>
+                <button class="tab-btn" data-tab="help">❓ Help</button>
+            </div>
+
+            <!-- Tabs Content -->
+            <div class="tabs-content">
+                <!-- Config Tab -->
+                <div class="tab-panel active" data-tab="config">
+                    <div class="info-banner">
+                        <strong>Welcome!</strong> Customize your Kanban board below. All changes update in real-time.
+                    </div>
+
+                    <div class="settings-grid">
+                        <!-- Theme Selection -->
+                        <div class="setting-card">
+                            <h3>🎨 Theme</h3>
+                            <div class="control-group">
+                                <select id="theme-select">
+                                    <option value="default">Default</option>
+                                    <option value="dark">Dark</option>
+                                    <option value="light">Light</option>
+                                    <option value="colorful">Colorful</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Plugins -->
+                        <div class="setting-card">
+                            <h3>🔌 Plugins</h3>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="plugin-wip" checked>
+                                <label for="plugin-wip">WIP Limit (max 3 cards)</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="plugin-aging" checked>
+                                <label for="plugin-aging">Card Aging</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="plugin-collapse">
+                                <label for="plugin-collapse">Column Collapse</label>
+                            </div>
+                        </div>
+
+                        <!-- Drag Options -->
+                        <div class="setting-card">
+                            <h3>🖱️ Drag & Drop</h3>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="drag-enabled" checked>
+                                <label for="drag-enabled">Enable Dragging</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="drag-click-remove">
+                                <label for="drag-click-remove">Click to Remove</label>
+                            </div>
+                        </div>
+
+                        <!-- Accessibility -->
+                        <div class="setting-card">
+                            <h3>♿ Accessibility</h3>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="a11y-enabled" checked>
+                                <label for="a11y-enabled">Enable A11y</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="a11y-announce">
+                                <label for="a11y-announce">Announcements</label>
+                            </div>
+                        </div>
+
+                        <!-- Storage -->
+                        <div class="setting-card">
+                            <h3>💾 Persistence</h3>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="storage-enabled">
+                                <label for="storage-enabled">LocalStorage</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Code Tab -->
+                <div class="tab-panel" data-tab="code">
+                    <div class="info-banner">
+                        This is the <strong>live code</strong> for your current configuration. Copy it to use in your project!
+                    </div>
+                    <div class="code-viewer">
+                        <button class="copy-btn" id="copy-code-btn">Copy</button>
+                        <pre><code id="code-output">// Code will appear here</code></pre>
+                    </div>
+                </div>
+
+                <!-- CRUD Tab -->
+                <div class="tab-panel" data-tab="crud">
+                    <div class="info-banner">
+                        Perform <strong>CRUD operations</strong> to add, update, or remove cards, columns, and lanes.
+                    </div>
+
+                    <!-- Add Card Form -->
+                    <div class="crud-form">
+                        <h3>➕ Add Card</h3>
+                        <div class="control-group">
+                            <label>Card Title</label>
+                            <input type="text" id="card-title" placeholder="Enter card title">
+                        </div>
+                        <div class="form-row">
+                            <div class="control-group">
+                                <label>Column ID</label>
+                                <select id="card-column">
+                                    <option value="1">To Do</option>
+                                    <option value="2">In Progress</option>
+                                    <option value="3">Done</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label>Lane ID</label>
+                                <input type="number" id="card-lane" value="1">
+                            </div>
+                        </div>
+                        <button class="btn btn-success" id="add-card-btn">Add Card</button>
+                    </div>
+
+                    <!-- Add Column Form -->
+                    <div class="crud-form">
+                        <h3>➕ Add Column</h3>
+                        <div class="control-group">
+                            <label>Column Title</label>
+                            <input type="text" id="column-title" placeholder="Enter column title">
+                        </div>
+                        <button class="btn btn-success" id="add-column-btn">Add Column</button>
+                    </div>
+
+                    <!-- Add Lane Form -->
+                    <div class="crud-form">
+                        <h3>➕ Add Lane</h3>
+                        <div class="control-group">
+                            <label>Lane Title</label>
+                            <input type="text" id="lane-title" placeholder="Enter lane title">
+                        </div>
+                        <button class="btn btn-success" id="add-lane-btn">Add Lane</button>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="crud-form">
+                        <h3>🗑️ Quick Actions</h3>
+                        <div class="form-actions">
+                            <button class="btn btn-danger" id="clear-board-btn">Clear Board</button>
+                            <button class="btn btn-secondary" id="sample-data-btn">Load Sample</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Events Tab -->
+                <div class="tab-panel" data-tab="events">
+                    <div class="info-banner">
+                        <strong>Real-time event log</strong> - Watch as events fire when you interact with the board.
+                    </div>
+                    <button class="btn btn-secondary clear-log-btn" id="clear-events-btn">Clear Log</button>
+                    <div class="event-log" id="event-log">
+                        <div class="event-item">
+                            <span class="event-type">board:init</span>
+                            <span class="event-time">Ready</span>
+                            <div class="event-details">Board initialized successfully</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Help Tab -->
+                <div class="tab-panel" data-tab="help">
+                    <div class="help-section">
+                        <h4>⌨️ Keyboard Shortcuts</h4>
+                        <ul>
+                            <li><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> - Navigate cards</li>
+                            <li><kbd>Space</kbd> / <kbd>Enter</kbd> - Pick up / Drop card</li>
+                            <li><kbd>Arrow Keys</kbd> - Move card while dragging</li>
+                            <li><kbd>Esc</kbd> - Cancel drag operation</li>
+                            <li><kbd>Home</kbd> / <kbd>End</kbd> - Move to first/last card</li>
+                        </ul>
+                    </div>
+
+                    <div class="help-section">
+                        <h4>🎮 Features</h4>
+                        <ul>
+                            <li><strong>Drag & Drop:</strong> Use mouse or touch to drag cards</li>
+                            <li><strong>Themes:</strong> 4 built-in themes to choose from</li>
+                            <li><strong>Plugins:</strong> Extend functionality with plugins</li>
+                            <li><strong>CRUD:</strong> Full Create, Read, Update, Delete API</li>
+                            <li><strong>Events:</strong> 20+ events for complete control</li>
+                            <li><strong>Accessibility:</strong> Full WCAG 2.1 compliance</li>
+                        </ul>
+                    </div>
+
+                    <div class="help-section">
+                        <h4>📚 Documentation</h4>
+                        <ul>
+                            <li><a href="https://github.com/yi00it/saharos-kanban" style="color: var(--primary-light);">GitHub Repository</a></li>
+                            <li><a href="https://www.npmjs.com/package/saharos-kanban" style="color: var(--primary-light);">NPM Package</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Kanban Library -->
+    <script type="module">
+        import { SaharosKanban, wipLimitPlugin, cardAgingPlugin, columnCollapsePlugin } from '../src/index.ts';
+
+        // Playground State
+        let kanban = null;
+        let eventLog = [];
+        let currentTheme = 'default';
+        let activePlugins = {
+            wip: true,
+            aging: true,
+            collapse: false
+        };
+
+        // Initialize
+        function init() {
+            createKanbanBoard();
+            setupEventListeners();
+            updateCode();
+        }
+
+        // Create Kanban Board
+        function createKanbanBoard() {
+            const container = document.getElementById('kanban-board');
+            container.innerHTML = '';
+
+            // Get plugins
+            const plugins = [];
+            if (activePlugins.wip) plugins.push(wipLimitPlugin({ limit: 3 }));
+            if (activePlugins.aging) plugins.push(cardAgingPlugin({
+                warningDays: 3,
+                dangerDays: 7
+            }));
+            if (activePlugins.collapse) plugins.push(columnCollapsePlugin());
+
+            // Create board
+            kanban = new SaharosKanban({
+                element: container,
+                initialState: getSampleData(),
+                dragOptions: {
+                    dragEnabled: document.getElementById('drag-enabled')?.checked ?? true,
+                    clickRemovesCard: document.getElementById('drag-click-remove')?.checked ?? false
+                },
+                a11yOptions: {
+                    enabled: document.getElementById('a11y-enabled')?.checked ?? true,
+                    announceDrops: document.getElementById('a11y-announce')?.checked ?? true
+                },
+                storageKey: document.getElementById('storage-enabled')?.checked ? 'playground-kanban' : null,
+                plugins: plugins
+            });
+
+            // Apply theme
+            applyTheme(currentTheme);
+
+            // Setup event listeners
+            setupKanbanEvents();
+
+            logEvent('board:init', 'Board created successfully');
+        }
+
+        // Setup Kanban Event Listeners
+        function setupKanbanEvents() {
+            const events = [
+                'board:init', 'board:render', 'board:state-change',
+                'card:add', 'card:update', 'card:remove', 'card:move', 'card:click',
+                'column:add', 'column:update', 'column:remove',
+                'lane:add', 'lane:update', 'lane:remove',
+                'drag:start', 'drag:end', 'drag:cancel'
+            ];
+
+            events.forEach(event => {
+                kanban.on(event, (data) => {
+                    logEvent(event, data);
+                });
+            });
+        }
+
+        // Get Sample Data
+        function getSampleData() {
+            return {
+                lanes: [
+                    { id: 1, title: 'Development Team' }
+                ],
+                columns: [
+                    { id: 1, title: 'To Do' },
+                    { id: 2, title: 'In Progress' },
+                    { id: 3, title: 'Done' }
+                ],
+                cards: [
+                    { id: 1, columnId: 1, laneId: 1, title: 'Design new landing page', description: 'Create wireframes and mockups' },
+                    { id: 2, columnId: 1, laneId: 1, title: 'Setup CI/CD pipeline', description: 'Configure GitHub Actions' },
+                    { id: 3, columnId: 2, laneId: 1, title: 'Implement user authentication', description: 'OAuth 2.0 integration' },
+                    { id: 4, columnId: 2, laneId: 1, title: 'Write API documentation', description: 'OpenAPI specification' },
+                    { id: 5, columnId: 3, laneId: 1, title: 'Fix responsive layout bug', description: 'Mobile view corrections' },
+                    { id: 6, columnId: 3, laneId: 1, title: 'Update dependencies', description: 'npm audit fix' }
+                ]
+            };
+        }
+
+        // Apply Theme
+        function applyTheme(theme) {
+            const container = document.getElementById('kanban-board');
+            container.className = '';
+            if (theme !== 'default') {
+                container.classList.add(`saharos-theme-${theme}`);
+            }
+            currentTheme = theme;
+            updateCode();
+        }
+
+        // Log Event
+        function logEvent(type, data) {
+            const timestamp = new Date().toLocaleTimeString();
+            eventLog.unshift({ type, data, timestamp });
+
+            // Keep only last 50 events
+            if (eventLog.length > 50) {
+                eventLog = eventLog.slice(0, 50);
+            }
+
+            updateEventLog();
+        }
+
+        // Update Event Log Display
+        function updateEventLog() {
+            const logContainer = document.getElementById('event-log');
+            logContainer.innerHTML = eventLog.map(event => `
+                <div class="event-item">
+                    <span class="event-type">${event.type}</span>
+                    <span class="event-time">${event.timestamp}</span>
+                    <div class="event-details">${JSON.stringify(event.data, null, 2)}</div>
+                </div>
+            `).join('');
+        }
+
+        // Update Code Display
+        function updateCode() {
+            const plugins = [];
+            if (activePlugins.wip) plugins.push('wipLimitPlugin({ limit: 3 })');
+            if (activePlugins.aging) plugins.push('cardAgingPlugin({ warningDays: 3, dangerDays: 7 })');
+            if (activePlugins.collapse) plugins.push('columnCollapsePlugin()');
+
+            const imports = ['SaharosKanban'];
+            if (activePlugins.wip) imports.push('wipLimitPlugin');
+            if (activePlugins.aging) imports.push('cardAgingPlugin');
+            if (activePlugins.collapse) imports.push('columnCollapsePlugin');
+
+            const code = `import { ${imports.join(', ')} } from 'saharos-kanban';
+import 'saharos-kanban/dist/saharos-kanban.css';
+
+// Create Kanban board
+const kanban = new SaharosKanban({
+  element: document.getElementById('kanban-board'),
+  initialState: {
+    lanes: [
+      { id: 1, title: 'Development Team' }
+    ],
+    columns: [
+      { id: 1, title: 'To Do' },
+      { id: 2, title: 'In Progress' },
+      { id: 3, title: 'Done' }
+    ],
+    cards: [
+      { id: 1, columnId: 1, laneId: 1, title: 'Task 1' },
+      { id: 2, columnId: 2, laneId: 1, title: 'Task 2' }
+    ]
+  },
+  dragOptions: {
+    dragEnabled: ${document.getElementById('drag-enabled')?.checked ?? true},
+    clickRemovesCard: ${document.getElementById('drag-click-remove')?.checked ?? false}
+  },
+  a11yOptions: {
+    enabled: ${document.getElementById('a11y-enabled')?.checked ?? true},
+    announceDrops: ${document.getElementById('a11y-announce')?.checked ?? true}
+  },${document.getElementById('storage-enabled')?.checked ? `
+  storageKey: 'my-kanban-board',` : ''}${plugins.length > 0 ? `
+  plugins: [
+    ${plugins.join(',\n    ')}
+  ]` : ''}
+});${currentTheme !== 'default' ? `
+
+// Apply theme
+document.getElementById('kanban-board').classList.add('saharos-theme-${currentTheme}');` : ''}`;
+
+            document.getElementById('code-output').textContent = code;
+        }
+
+        // Setup UI Event Listeners
+        function setupEventListeners() {
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tab = btn.dataset.tab;
+
+                    // Update buttons
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    // Update panels
+                    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                    document.querySelector(`[data-tab="${tab}"].tab-panel`).classList.add('active');
+                });
+            });
+
+            // Theme selector
+            document.getElementById('theme-select').addEventListener('change', (e) => {
+                applyTheme(e.target.value);
+            });
+
+            // Plugin toggles
+            document.getElementById('plugin-wip').addEventListener('change', (e) => {
+                activePlugins.wip = e.target.checked;
+                createKanbanBoard();
+            });
+
+            document.getElementById('plugin-aging').addEventListener('change', (e) => {
+                activePlugins.aging = e.target.checked;
+                createKanbanBoard();
+            });
+
+            document.getElementById('plugin-collapse').addEventListener('change', (e) => {
+                activePlugins.collapse = e.target.checked;
+                createKanbanBoard();
+            });
+
+            // Drag options
+            document.getElementById('drag-enabled').addEventListener('change', (e) => {
+                createKanbanBoard();
+            });
+
+            document.getElementById('drag-click-remove').addEventListener('change', (e) => {
+                createKanbanBoard();
+            });
+
+            // A11y options
+            document.getElementById('a11y-enabled').addEventListener('change', (e) => {
+                createKanbanBoard();
+            });
+
+            document.getElementById('a11y-announce').addEventListener('change', (e) => {
+                createKanbanBoard();
+            });
+
+            // Storage option
+            document.getElementById('storage-enabled').addEventListener('change', (e) => {
+                createKanbanBoard();
+            });
+
+            // CRUD operations
+            document.getElementById('add-card-btn').addEventListener('click', () => {
+                const title = document.getElementById('card-title').value;
+                const columnId = parseInt(document.getElementById('card-column').value);
+                const laneId = parseInt(document.getElementById('card-lane').value);
+
+                if (title) {
+                    kanban.addCard({
+                        id: Date.now(),
+                        title,
+                        columnId,
+                        laneId
+                    });
+                    document.getElementById('card-title').value = '';
+                    showNotification('Card added successfully!', 'success');
+                }
+            });
+
+            document.getElementById('add-column-btn').addEventListener('click', () => {
+                const title = document.getElementById('column-title').value;
+                if (title) {
+                    kanban.addColumn({
+                        id: Date.now(),
+                        title
+                    });
+                    document.getElementById('column-title').value = '';
+                    updateColumnSelect();
+                    showNotification('Column added successfully!', 'success');
+                }
+            });
+
+            document.getElementById('add-lane-btn').addEventListener('click', () => {
+                const title = document.getElementById('lane-title').value;
+                if (title) {
+                    kanban.addLane({
+                        id: Date.now(),
+                        title
+                    });
+                    document.getElementById('lane-title').value = '';
+                    showNotification('Lane added successfully!', 'success');
+                }
+            });
+
+            document.getElementById('clear-board-btn').addEventListener('click', () => {
+                if (confirm('Are you sure you want to clear the board?')) {
+                    kanban.loadState({ lanes: [{ id: 1, title: 'Lane 1' }], columns: [], cards: [] });
+                    showNotification('Board cleared!', 'success');
+                }
+            });
+
+            document.getElementById('sample-data-btn').addEventListener('click', () => {
+                kanban.loadState(getSampleData());
+                showNotification('Sample data loaded!', 'success');
+            });
+
+            // Clear events
+            document.getElementById('clear-events-btn').addEventListener('click', () => {
+                eventLog = [];
+                updateEventLog();
+            });
+
+            // Copy code
+            document.getElementById('copy-code-btn').addEventListener('click', () => {
+                const code = document.getElementById('code-output').textContent;
+                navigator.clipboard.writeText(code).then(() => {
+                    const btn = document.getElementById('copy-code-btn');
+                    btn.textContent = 'Copied!';
+                    btn.classList.add('copied');
+                    setTimeout(() => {
+                        btn.textContent = 'Copy';
+                        btn.classList.remove('copied');
+                    }, 2000);
+                });
+            });
+
+            // Reset
+            document.getElementById('reset-btn').addEventListener('click', () => {
+                if (confirm('Reset the playground to default settings?')) {
+                    location.reload();
+                }
+            });
+
+            // Export
+            document.getElementById('export-btn').addEventListener('click', () => {
+                const code = document.getElementById('code-output').textContent;
+                navigator.clipboard.writeText(code).then(() => {
+                    showNotification('Code copied to clipboard!', 'success');
+                });
+            });
+        }
+
+        // Update column select dropdown
+        function updateColumnSelect() {
+            const select = document.getElementById('card-column');
+            const state = kanban.getState();
+            select.innerHTML = state.columns.map(col =>
+                `<option value="${col.id}">${col.title}</option>`
+            ).join('');
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Start the playground
+        init();
+    </script>
+</body>
+</html>
